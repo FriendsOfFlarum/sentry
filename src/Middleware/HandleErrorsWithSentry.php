@@ -18,13 +18,13 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         try {
             return $handler->handle($request);
         } catch (Throwable $e) {
-            $this->reportException($e);
+            $this->reportException($request, $e);
 
             throw $e;
         }
     }
 
-    protected function reportException(Throwable $error)
+    protected function reportException(ServerRequestInterface $request, Throwable $error)
     {
         $status = 500;
         $errorCode = $error->getCode();
@@ -38,7 +38,19 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         if ($status >= 500 && $status < 600) {
             $sentry = app('sentry');
 
-            if ($sentry != null) $sentry->captureException($error);
+            if ($sentry != null) {
+                $user = $request->getAttribute('actor');
+
+                if ($user != null) {
+                    $sentry->user_context([
+                        'id' => $user->id,
+                        'username' => $user->username,
+                        'email' => $user->email,
+                    ]);
+                }
+
+                $sentry->captureException($error);
+            }
         }
     }
 }
