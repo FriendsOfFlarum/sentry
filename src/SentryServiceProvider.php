@@ -1,10 +1,9 @@
 <?php
 
 /*
- * This file is part of fof/sentry.
+ * This file is part of fof/sentry
  *
  * Copyright (c) 2018 FriendsOfFlarum.
- *
  *
  * For the full copyright and license information, please view the LICENSE.md
  * file that was distributed with this source code.
@@ -22,7 +21,9 @@ class SentryServiceProvider extends ServiceProvider
         $this->app->singleton('sentry', function () {
             $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
-            if (!isset($dsn)) return null;
+            if (!isset($dsn)) {
+                return;
+            }
 
             $base_path = app()->basePath();
 
@@ -30,12 +31,12 @@ class SentryServiceProvider extends ServiceProvider
                 $dsn,
                 [
                     'environment' => app()->environment(),
-                    'app_path' => $base_path,
-                    'prefixes' => array($base_path),
-                    'tags' => [
+                    'app_path'    => $base_path,
+                    'prefixes'    => [$base_path],
+                    'tags'        => [
                         'offline' => (bool) app()->isDownForMaintenance() ? 1 : 0,
-                        'debug' => app()->inDebugMode(),
-                    ]
+                        'debug'   => app()->inDebugMode(),
+                    ],
                 ]
             );
         });

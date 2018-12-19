@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2018 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Sentry\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
@@ -43,9 +52,9 @@ class HandleErrorsWithSentry implements MiddlewareInterface
 
                 if ($user != null) {
                     $sentry->user_context([
-                        'id' => $user->id,
+                        'id'       => $user->id,
                         'username' => $user->username,
-                        'email' => $user->email,
+                        'email'    => $user->email,
                     ]);
                 }
 
