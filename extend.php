@@ -11,6 +11,7 @@
 
 namespace FoF\Sentry;
 
+use Flarum\Console\Event\Configuring;
 use Flarum\Event\ConfigureMiddleware;
 use Flarum\Extend;
 use Flarum\Foundation\Application;
@@ -27,5 +28,7 @@ return [
         $events->listen(ConfigureMiddleware::class, function (ConfigureMiddleware $event) {
             $event->pipe(app(HandleErrorsWithSentry::class));
         });
+
+        $events->listen(Configuring::class, Listener\HandleConsoleErrorsWithSentry::class);
     },
 ];
