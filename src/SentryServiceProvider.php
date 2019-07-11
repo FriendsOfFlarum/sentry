@@ -12,33 +12,50 @@
 namespace FoF\Sentry;
 
 use Illuminate\Support\ServiceProvider;
-use Raven_Client;
+use Sentry\ClientBuilder;
+use Sentry\State\Hub;
+use Sentry\State\HubInterface;
+use Sentry\State\Scope;
 
 class SentryServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register() {
+        //
+    }
+
+    public function boot()
     {
-        $this->app->singleton('sentry', function () {
-            $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
+        $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
-            if (!isset($dsn)) {
-                return;
-            }
+        if ($dsn == null) {
+            return;
+        }
 
-            $base_path = app()->basePath();
+        $this->app->singleton('sentry', function () use ($dsn) {
+            if ($dsn == null) return null;
 
-            return new Raven_Client(
-                $dsn,
-                [
-                    'environment' => app()->environment(),
-                    'app_path'    => $base_path,
-                    'prefixes'    => [$base_path],
-                    'tags'        => [
-                        'offline' => (bool) app()->isDownForMaintenance() ? 1 : 0,
-                        'debug'   => app()->inDebugMode(),
-                    ],
-                ]
-            );
+            $base_path = app('path.base');
+
+            $clientBuilder = ClientBuilder::create([
+                'dsn' => $dsn,
+                'environment' => app()->environment(),
+                'prefixes' => [ $base_path ],
+                'project_root' => $base_path,
+                'in_app_exclude' => [ app('path.vendor') ],
+            ]);
+
+            $hub = Hub::setCurrent(new Hub($clientBuilder->getClient()));
+
+            $hub->configureScope(function (Scope $scope) {
+                $scope->setTag('offline', (int) app()->isDownForMaintenance());
+                $scope->setTag('debug', (bool) app()->inDebugMode());
+                $scope->setTag('flarum', app()->version());
+            });
+
+            return $hub;
         });
+
+        $this->app->alias('sentry', HubInterface::class);
+
     }
 }
