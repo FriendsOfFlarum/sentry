@@ -53,10 +53,11 @@ class HandleErrorsWithSentry implements MiddlewareInterface
      * @var SettingsRepositoryInterface
      */
     protected $settings;
+
     /**
-     * @param ViewFactory $view
-     * @param LoggerInterface $logger
-     * @param TranslatorInterface $translator
+     * @param ViewFactory                 $view
+     * @param LoggerInterface             $logger
+     * @param TranslatorInterface         $translator
      * @param SettingsRepositoryInterface $settings
      */
     public function __construct(ViewFactory $view, LoggerInterface $logger, TranslatorInterface $translator, SettingsRepositoryInterface $settings)
@@ -101,15 +102,15 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         }
 
         /**
-         * @var $hub HubInterface
+         * @var HubInterface
          */
         $hub = app('sentry');
 
         $hub->withScope(function (Scope $scope) use ($error, $hub, $user) {
             $scope->setUser([
-                'id' => $user->id,
+                'id'       => $user->id,
                 'username' => $user->username,
-                'email' => $user->email,
+                'email'    => $user->email,
             ]);
 
             $hub->captureException($error);
