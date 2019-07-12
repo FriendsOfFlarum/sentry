@@ -74,8 +74,6 @@ class HandleErrorsWithSentry implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
-            throw new \Exception('hey guys this is a test');
-
             return $handler->handle($request);
         } catch (Throwable $e) {
             return $this->reportException($request, $e);
