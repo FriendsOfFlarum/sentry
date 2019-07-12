@@ -74,6 +74,8 @@ class HandleErrorsWithSentry implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
+            throw new \Exception('hey guys this is a test');
+
             return $handler->handle($request);
         } catch (Throwable $e) {
             return $this->reportException($request, $e);
@@ -107,11 +109,13 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         $hub = app('sentry');
 
         $hub->withScope(function (Scope $scope) use ($error, $hub, $user) {
-            $scope->setUser([
-                'id'       => $user->id,
-                'username' => $user->username,
-                'email'    => $user->email,
-            ]);
+            if ($user != null && $user->id != 0) {
+                $scope->setUser([
+                    'id'       => $user->id,
+                    'username' => $user->username,
+                    'email'    => $user->email,
+                ]);
+            }
 
             $hub->captureException($error);
         });
