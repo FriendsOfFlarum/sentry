@@ -97,14 +97,14 @@ class HandleErrorsWithSentry implements MiddlewareInterface
             $status = $errorCode;
         }
 
-        if ($status < 500 || $status >= 600 || !app()->bound('sentry')) {
-            throw $error;
-        }
-
         /**
          * @var HubInterface
          */
         $hub = app('sentry');
+
+        if ($status < 500 || $status >= 600 || $hub != null) {
+            throw $error;
+        }
 
         $hub->withScope(function (Scope $scope) use ($error, $hub, $user) {
             if ($user != null && $user->id != 0) {

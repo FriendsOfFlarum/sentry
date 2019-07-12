@@ -21,20 +21,11 @@ class SentryServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        //
-    }
+        $this->app->singleton('sentry', function () {
+            $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
-    public function boot()
-    {
-        $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
-
-        if ($dsn == null) {
-            return;
-        }
-
-        $this->app->singleton('sentry', function () use ($dsn) {
             if ($dsn == null) {
-                return;
+                return null;
             }
 
             $base_path = app('path.base');
