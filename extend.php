@@ -15,20 +15,16 @@ use Flarum\Console\Event\Configuring;
 use Flarum\Event\ConfigureMiddleware;
 use Flarum\Extend;
 use Flarum\Foundation\Application;
-use FoF\Sentry\Middleware\HandleErrorsWithSentry;
 use Illuminate\Events\Dispatcher;
 
 return [
     (new Extend\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Extend\Locales(__DIR__.'/locale'),
-    function (Dispatcher $events, Application $app) {
+    new Extend\Locales(__DIR__ . '/resources/locale'),
+    new Extend\Compat(function (Dispatcher $events, Application $app) {
         $app->register(SentryServiceProvider::class);
 
-        $events->listen(ConfigureMiddleware::class, function (ConfigureMiddleware $event) {
-            $event->pipe(app(HandleErrorsWithSentry::class));
-        });
-
+        $events->listen(ConfigureMiddleware::class, Listener\HandleHttpErrorsWithSentry::class);
         $events->listen(Configuring::class, Listener\HandleConsoleErrorsWithSentry::class);
-    },
+    })
 ];

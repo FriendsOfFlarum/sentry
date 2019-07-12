@@ -1,4 +1,0 @@
-fof-sentry:
-  admin:
-    settings:
-      dsn_label: Sentry DSN
