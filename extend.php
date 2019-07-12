@@ -21,7 +21,7 @@ use Illuminate\View\Factory;
 return [
     (new Extend\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Extend\Locales(__DIR__ . '/resources/locale'),
+    new Extend\Locales(__DIR__.'/resources/locale'),
     new Extend\Compat(function (Dispatcher $events, Application $app, Factory $views) {
         $app->register(SentryServiceProvider::class);
 
@@ -32,5 +32,5 @@ return [
         });
 
         $views->addNamespace('fof-sentry', __DIR__.'/resources/views');
-    })
+    }),
 ];

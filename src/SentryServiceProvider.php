@@ -19,7 +19,8 @@ use Sentry\State\Scope;
 
 class SentryServiceProvider extends ServiceProvider
 {
-    public function register() {
+    public function register()
+    {
         //
     }
 
@@ -32,16 +33,18 @@ class SentryServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton('sentry', function () use ($dsn) {
-            if ($dsn == null) return null;
+            if ($dsn == null) {
+                return;
+            }
 
             $base_path = app('path.base');
 
             $clientBuilder = ClientBuilder::create([
-                'dsn' => $dsn,
-                'environment' => app()->environment(),
-                'prefixes' => [ $base_path ],
-                'project_root' => $base_path,
-                'in_app_exclude' => [ app('path.vendor') ],
+                'dsn'            => $dsn,
+                'environment'    => app()->environment(),
+                'prefixes'       => [$base_path],
+                'project_root'   => $base_path,
+                'in_app_exclude' => [app('path.vendor')],
             ]);
 
             $hub = Hub::setCurrent(new Hub($clientBuilder->getClient()));
@@ -57,6 +60,5 @@ class SentryServiceProvider extends ServiceProvider
         });
 
         $this->app->alias('sentry', HubInterface::class);
-
     }
 }
