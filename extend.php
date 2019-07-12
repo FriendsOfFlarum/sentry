@@ -16,16 +16,21 @@ use Flarum\Extend;
 use Flarum\Foundation\Application;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
 use Illuminate\Events\Dispatcher;
+use Illuminate\View\Factory;
 
 return [
     (new Extend\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Extend\Locales(__DIR__.'/locale'),
-    function (Dispatcher $events, Application $app) {
+    new Extend\Locales(__DIR__ . '/resources/locale'),
+    new Extend\Compat(function (Dispatcher $events, Application $app, Factory $views) {
         $app->register(SentryServiceProvider::class);
 
-        $events->listen(ConfigureMiddleware::class, function (ConfigureMiddleware $event) {
+        $events->listen(ConfigureMiddleware::class, function (ConfigureMiddleware $event) use ($app) {
+            $app->instance('sentry.stack', $event->isApi() ? 'api' : ($event->isForum() ? 'forum' : 'admin'));
+
             $event->pipe(app(HandleErrorsWithSentry::class));
         });
-    },
+
+        $views->addNamespace('fof-sentry', __DIR__.'/resources/views');
+    })
 ];

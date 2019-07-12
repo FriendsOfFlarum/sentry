@@ -17,20 +17,56 @@ use Flarum\Http\Exception\ForbiddenException;
 use Flarum\Http\Exception\MethodNotAllowedException;
 use Flarum\Http\Exception\RouteNotFoundException;
 use Flarum\Post\Exception\FloodingException;
+use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\Exception\PermissionDeniedException;
+use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Session\TokenMismatchException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Translation\TranslatorInterface;
 use Throwable;
+use Zend\Diactoros\Response\HtmlResponse;
 
 class HandleErrorsWithSentry implements MiddlewareInterface
 {
+    /**
+     * @var ViewFactory
+     */
+    protected $view;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+    /**
+     * @var TranslatorInterface
+     */
+    protected $translator;
+    /**
+     * @var SettingsRepositoryInterface
+     */
+    protected $settings;
+    /**
+     * @param ViewFactory $view
+     * @param LoggerInterface $logger
+     * @param TranslatorInterface $translator
+     * @param SettingsRepositoryInterface $settings
+     */
+    public function __construct(ViewFactory $view, LoggerInterface $logger, TranslatorInterface $translator, SettingsRepositoryInterface $settings)
+    {
+        $this->view = $view;
+        $this->logger = $logger;
+        $this->translator = $translator;
+        $this->settings = $settings;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -39,16 +75,14 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         try {
             return $handler->handle($request);
         } catch (Throwable $e) {
-            $this->reportException($request, $e);
-
-            throw $e;
+            return $this->reportException($request, $e);
         }
     }
 
     protected function reportException(ServerRequestInterface $request, Throwable $error)
     {
         if ($this->ignoreError($error)) {
-            return;
+            throw $error;
         }
 
         $user = $request->getAttribute('actor');
@@ -62,26 +96,37 @@ class HandleErrorsWithSentry implements MiddlewareInterface
             $status = $errorCode;
         }
 
-        if ($status >= 500 && $status < 600) {
-            if (app()->bound('sentry')) {
-                /**
-                 * @var $hub HubInterface
-                 */
-                $hub = app('sentry');
-
-                if ($user != null) {
-                    $hub->withScope(function (Scope $scope) use ($error, $hub, $user) {
-                        $scope->setUser([
-                            'id'       => $user->id,
-                            'username' => $user->username,
-                            'email'    => $user->email,
-                        ]);
-
-                        $hub->captureException($error);
-                    });
-                };
-            }
+        if ($status < 500 || $status >= 600 || !app()->bound('sentry')) {
+            throw $error;
         }
+
+        /**
+         * @var $hub HubInterface
+         */
+        $hub = app('sentry');
+
+        $hub->withScope(function (Scope $scope) use ($error, $hub, $user) {
+            $scope->setUser([
+                'id' => $user->id,
+                'username' => $user->username,
+                'email' => $user->email,
+            ]);
+
+            $hub->captureException($error);
+        });
+
+        if (!((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback')) || app('sentry.stack') === 'api' || app()->inDebugMode()) {
+            throw $error;
+        }
+
+        $this->logger->error($error);
+
+        $view = $this->view->make('fof-sentry::error.feedback')
+            ->with('error', $error)
+            ->with('message', $this->getMessage($status))
+            ->with('user', $user);
+
+        return new HtmlResponse($view->render(), $status);
     }
 
     private function ignoreError(Throwable $error)
@@ -97,5 +142,20 @@ class HandleErrorsWithSentry implements MiddlewareInterface
             || $error instanceof RouteNotFoundException
             || $error instanceof TokenMismatchException
             || $error instanceof ValidationException;
+    }
+
+    private function getMessage($status)
+    {
+        return $this->getTranslationIfExists($status)
+            ?? $this->getTranslationIfExists(500)
+            ?? 'An error occurred while trying to load this page.';
+    }
+
+    private function getTranslationIfExists($status)
+    {
+        $key = "core.views.error.${status}_message";
+        $translation = $this->translator->trans($key, ['{forum}' => $this->settings->get('forum_title')]);
+
+        return $translation === $key ? null : $translation;
     }
 }
