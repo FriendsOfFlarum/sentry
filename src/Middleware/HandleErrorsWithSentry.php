@@ -83,7 +83,7 @@ class HandleErrorsWithSentry implements MiddlewareInterface
     protected function reportException(ServerRequestInterface $request, Throwable $ex)
     {
         if ($this->ignoreError($ex)) {
-            app('log')->debug('[fof/sentry] ignoring exception of type ' . get_class($ex));
+            app('log')->debug('[fof/sentry] ignoring exception of type '.get_class($ex));
 
             throw $ex;
         }
@@ -100,16 +100,16 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         }
 
         /**
-         * @var $hub HubInterface
+         * @var HubInterface
          */
         $hub = app('sentry');
         $id = null;
 
         if ($status < 500 || $status >= 600) {
-            $this->logger->info('[fof/sentry] ignoring exception with status code ' . $status);
+            $this->logger->info('[fof/sentry] ignoring exception with status code '.$status);
 
             throw $ex;
-        } else if ($hub == null) {
+        } elseif ($hub == null) {
             app('log')->warn('[fof/sentry] sentry dsn not set');
 
             throw $ex;
@@ -128,10 +128,10 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         });
 
         if ($id == null) {
-            $this->logger->warning('[fof/sentry] exception of type ' . get_class($ex) . ' failed to send');
+            $this->logger->warning('[fof/sentry] exception of type '.get_class($ex).' failed to send');
 
             throw $ex;
-        } else if (!((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback')) || app('sentry.stack') === 'api' || app()->inDebugMode()) {
+        } elseif (!((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback')) || app('sentry.stack') === 'api' || app()->inDebugMode()) {
             throw $ex;
         }
 
