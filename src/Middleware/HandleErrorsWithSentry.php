@@ -80,16 +80,18 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         }
     }
 
-    protected function reportException(ServerRequestInterface $request, Throwable $error)
+    protected function reportException(ServerRequestInterface $request, Throwable $ex)
     {
-        if ($this->ignoreError($error)) {
-            throw $error;
+        if ($this->ignoreError($ex)) {
+            app('log')->debug('[fof/sentry] ignoring exception of type ' . get_class($ex));
+
+            throw $ex;
         }
 
         $user = $request->getAttribute('actor');
 
         $status = 500;
-        $errorCode = $error->getCode();
+        $errorCode = $ex->getCode();
 
         // If it seems to be a valid HTTP status code, we pass on the
         // exception's status.
@@ -98,15 +100,22 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         }
 
         /**
-         * @var HubInterface
+         * @var $hub HubInterface
          */
         $hub = app('sentry');
+        $id = null;
 
-        if ($status < 500 || $status >= 600 || $hub != null) {
-            throw $error;
+        if ($status < 500 || $status >= 600) {
+            $this->logger->info('[fof/sentry] ignoring exception with status code ' . $status);
+
+            throw $ex;
+        } else if ($hub == null) {
+            app('log')->warn('[fof/sentry] sentry dsn not set');
+
+            throw $ex;
         }
 
-        $hub->withScope(function (Scope $scope) use ($error, $hub, $user) {
+        $hub->withScope(function (Scope $scope) use ($ex, $hub, $user, &$id) {
             if ($user != null && $user->id != 0) {
                 $scope->setUser([
                     'id'       => $user->id,
@@ -115,17 +124,21 @@ class HandleErrorsWithSentry implements MiddlewareInterface
                 ]);
             }
 
-            $hub->captureException($error);
+            $id = $hub->captureException($ex);
         });
 
-        if (!((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback')) || app('sentry.stack') === 'api' || app()->inDebugMode()) {
-            throw $error;
+        if ($id == null) {
+            $this->logger->warning('[fof/sentry] exception of type ' . get_class($ex) . ' failed to send');
+
+            throw $ex;
+        } else if (!((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback')) || app('sentry.stack') === 'api' || app()->inDebugMode()) {
+            throw $ex;
         }
 
-        $this->logger->error($error);
+        $this->logger->error($ex);
 
         $view = $this->view->make('fof-sentry::error.feedback')
-            ->with('error', $error)
+            ->with('error', $ex)
             ->with('message', $this->getMessage($status))
             ->with('user', $user);
 
