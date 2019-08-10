@@ -13,6 +13,10 @@ namespace FoF\Sentry;
 
 use Flarum\Frontend\Assets;
 use Flarum\Frontend\Compiler\Source\SourceCollector;
+use Flarum\Foundation\ErrorHandling\Reporter;
+use Flarum\Foundation\ErrorHandling\ViewRenderer;
+use FoF\Sentry\Renderers\SentryRenderer;
+use FoF\Sentry\Reporters\SentryReporter;
 use Illuminate\Support\ServiceProvider;
 use Sentry\ClientBuilder;
 use Sentry\State\Hub;
@@ -64,6 +68,8 @@ class SentryServiceProvider extends ServiceProvider
         });
 
         $this->app->alias('sentry', HubInterface::class);
+        $this->app->bind(ViewRenderer::class, SentryRenderer::class);
+        $this->app->tag(SentryReporter::class, Reporter::class);
 
         // js assets
         $this->app->resolving('flarum.assets.forum', function (Assets $assets) {
