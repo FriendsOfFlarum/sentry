@@ -1,8 +1,15 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2018 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
 namespace FoF\Sentry\Reporters;
-
 
 use Flarum\Foundation\ErrorHandling\HandledError;
 use Flarum\Foundation\ErrorHandling\Reporter;
@@ -26,9 +33,9 @@ class SentryReporter implements Reporter
     public function report(HandledError $error)
     {
         /**
-         * @var $hub HubInterface
-         * @var $request ServerRequestInterface
-         * @var $stack string
+         * @var HubInterface
+         * @var $request     ServerRequestInterface
+         * @var $stack       string
          */
         $hub = app('sentry');
         $request = app('sentry.request');
