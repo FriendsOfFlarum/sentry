@@ -56,7 +56,11 @@ class SentryServiceProvider extends ServiceProvider
         });
 
         $this->app->alias('sentry', HubInterface::class);
-        $this->app->bind(ViewRenderer::class, SentryRenderer::class);
+
+        $this->app->extend(ViewRenderer::class, function (ViewRenderer $renderer) {
+            return new SentryRenderer($renderer);
+        });
+
         $this->app->tag(SentryReporter::class, Reporter::class);
 
         // js assets
