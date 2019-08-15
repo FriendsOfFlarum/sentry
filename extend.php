@@ -23,7 +23,7 @@ return [
         ->content(Content\SentryJavaScript::class),
     (new Native\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Native\Locales(__DIR__.'/resources/locale'),
+    new Native\Locales(__DIR__.'/locale'),
     new Native\Compat(function (Dispatcher $events, Application $app) {
         $app->register(SentryServiceProvider::class);
 
