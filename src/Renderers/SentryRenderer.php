@@ -11,34 +11,75 @@
 
 namespace FoF\Sentry\Renderers;
 
+use Flarum\Foundation\ErrorHandling\Formatter;
 use Flarum\Foundation\ErrorHandling\HandledError;
 use Flarum\Foundation\ErrorHandling\ViewRenderer;
+use Illuminate\Contracts\View\Factory as ViewFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Zend\Diactoros\Response\HtmlResponse;
+use Symfony\Component\Translation\TranslatorInterface;
 
-class SentryRenderer extends ViewRenderer
+class SentryRenderer implements Formatter
 {
+    /**
+     * @var ViewRenderer
+     */
+    private $renderer;
+
+    /**
+     * @var ViewFactory
+     */
+    protected $view;
+
+    /**
+     * @var TranslatorInterface
+     */
+    protected $translator;
+
+    public function __construct(ViewRenderer $renderer)
+    {
+        $this->renderer = $renderer;
+
+        $this->view = app(ViewFactory::class);
+        $this->translator = app(TranslatorInterface::class);
+    }
+
     public function format(HandledError $error, Request $request): Response
     {
-        if (!$error->shouldBeReported()) {
-            return parent::format($error, $request);
-        }
-
+        $response = $this->renderer->format($error, $request);
         $sentry = app('sentry');
 
-        if ($sentry == null || $sentry->getLastEventId() == null) {
-            return parent::format($error, $request);
+        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null) {
+            return $response;
         }
 
-        $originalView = $this->determineView($error);
+        $dsn = app('flarum.settings')->get('fof-sentry.dsn');
+        $user = app('sentry.request')->getAttribute('actor');
+        $locale = $this->translator->getLocale();
+        $eventId =  $sentry->getLastEventId();
+        $userData = ($user != null && $user->id != 0) ?
+            "user: {
+                email: '$user->email',
+                name: '$user->username'
+            }" : '';
 
-        $view = $this->view->make('fof-sentry::error.feedback')
-            ->with('errorView', $originalView)
-            ->with('error', $error->getError())
-            ->with('message', $this->getMessage($error))
-            ->with('user', app('sentry.request')->getAttribute('actor'));
+        $body = $response->getBody();
 
-        return new HtmlResponse($view->render(), $error->getStatusCode());
+        $body->seek($body->getSize());
+
+        $body->write("
+            <script src=\"https://browser.sentry-cdn.com/5.6.1/bundle.min.js\" integrity=\"sha384-pGTFmbQfua2KiaV2+ZLlfowPdd5VMT2xU4zCBcuJr7TVQozMO+I1FmPuVHY3u8KB\" crossorigin=\"anonymous\"></script>
+            
+            <script>
+                Sentry.init({ dsn: '$dsn' });
+                Sentry.showReportDialog({
+                    lang: '$locale',
+                    eventId: '$eventId',
+                    $userData
+                });
+            </script>
+        ");
+
+        return $response;
     }
 }
