@@ -24,7 +24,7 @@ return [
     (new Native\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
     new Native\Locales(__DIR__.'/resources/locale'),
-    new Native\Compat(function (Dispatcher $events, Application $app, Factory $views) {
+    new Native\Compat(function (Dispatcher $events, Application $app) {
         $app->register(SentryServiceProvider::class);
 
         $events->listen(ConfigureMiddleware::class, function (ConfigureMiddleware $event) use ($app) {
@@ -32,7 +32,5 @@ return [
 
             $event->pipe(app(HandleErrorsWithSentry::class));
         });
-
-        $views->addNamespace('fof-sentry', __DIR__.'/resources/views');
     }),
 ];
