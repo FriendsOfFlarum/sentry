@@ -56,7 +56,7 @@ class SentryRenderer implements Formatter
         $dsn = app('flarum.settings')->get('fof-sentry.dsn');
         $user = app('sentry.request')->getAttribute('actor');
         $locale = $this->translator->getLocale();
-        $eventId =  $sentry->getLastEventId();
+        $eventId = $sentry->getLastEventId();
         $userData = ($user != null && $user->id != 0) ?
             "user: {
                 email: '$user->email',
