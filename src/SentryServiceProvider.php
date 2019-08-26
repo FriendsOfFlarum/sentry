@@ -35,7 +35,6 @@ class SentryServiceProvider extends ServiceProvider
                 'environment'    => app()->environment(),
                 'prefixes'       => [$base_path],
                 'project_root'   => $base_path,
-                'in_app_exclude' => [app('path.vendor')],
             ]);
 
             $hub = Hub::setCurrent(new Hub($clientBuilder->getClient()));
