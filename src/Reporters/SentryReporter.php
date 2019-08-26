@@ -11,7 +11,6 @@
 
 namespace FoF\Sentry\Reporters;
 
-use Flarum\Foundation\ErrorHandling\HandledError;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
