@@ -17,6 +17,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
+use Throwable;
 
 class SentryReporter implements Reporter
 {
@@ -30,7 +31,7 @@ class SentryReporter implements Reporter
         $this->logger = $logger;
     }
 
-    public function report(HandledError $error)
+    public function report(Throwable $error)
     {
         /**
          * @var HubInterface
@@ -42,14 +43,12 @@ class SentryReporter implements Reporter
         $id = null;
 
         if ($hub == null) {
-            app('log')->warn('[fof/sentry] sentry dsn not set');
+            $this->logger->warning('[fof/sentry] sentry dsn not set');
 
             return;
         }
 
-        $hub->configureScope(function (Scope $scope) use ($request, $error) {
-            $scope->setExtra('details', $error->getDetails());
-
+        $hub->configureScope(function (Scope $scope) use ($request) {
             $user = $request->getAttribute('actor');
 
             if ($user != null && $user->id != 0) {
@@ -61,11 +60,10 @@ class SentryReporter implements Reporter
             }
         });
 
-        $err = $error->getError();
-        $id = $hub->captureException($error->getError());
+        $id = $hub->captureException($error);
 
         if ($id == null) {
-            $this->logger->warning('[fof/sentry] exception of type '.get_class($err).' failed to send');
+            $this->logger->warning('[fof/sentry] exception of type '.get_class($error).' failed to send');
         }
     }
 }

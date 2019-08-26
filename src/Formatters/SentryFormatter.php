@@ -9,22 +9,22 @@
  * file that was distributed with this source code.
  */
 
-namespace FoF\Sentry\Renderers;
+namespace FoF\Sentry\Formatters;
 
-use Flarum\Foundation\ErrorHandling\Formatter;
 use Flarum\Foundation\ErrorHandling\HandledError;
-use Flarum\Foundation\ErrorHandling\ViewRenderer;
+use Flarum\Foundation\ErrorHandling\HttpFormatter;
+use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Symfony\Component\Translation\TranslatorInterface;
 
-class SentryRenderer implements Formatter
+class SentryFormatter implements HttpFormatter
 {
     /**
-     * @var ViewRenderer
+     * @var ViewFormatter
      */
-    private $renderer;
+    private $formatter;
 
     /**
      * @var ViewFactory
@@ -36,9 +36,9 @@ class SentryRenderer implements Formatter
      */
     protected $translator;
 
-    public function __construct(ViewRenderer $renderer)
+    public function __construct(ViewFormatter $formatter)
     {
-        $this->renderer = $renderer;
+        $this->formatter = $formatter;
 
         $this->view = app(ViewFactory::class);
         $this->translator = app(TranslatorInterface::class);
@@ -46,10 +46,10 @@ class SentryRenderer implements Formatter
 
     public function format(HandledError $error, Request $request): Response
     {
-        $response = $this->renderer->format($error, $request);
+        $response = $this->formatter->format($error, $request);
         $sentry = app('sentry');
 
-        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null) {
+        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null || !((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback'))) {
             return $response;
         }
 
