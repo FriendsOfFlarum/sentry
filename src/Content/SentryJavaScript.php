@@ -1,8 +1,15 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2018 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
 namespace FoF\Sentry\Content;
-
 
 use Flarum\Frontend\Document;
 use Flarum\Settings\SettingsRepositoryInterface;
@@ -23,7 +30,9 @@ class SentryJavaScript
     {
         $useJs = (bool) (int) $this->settings->get('fof-sentry.javascript');
 
-        if (!$useJs) return;
+        if (!$useJs) {
+            return;
+        }
 
         $dsn = $this->settings->get('fof-sentry.dsn');
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
@@ -37,7 +46,7 @@ class SentryJavaScript
                             beforeSend(event) {
                                 event.logger = 'javascript';
                                 // Check if it is an exception, and if so, show the report dialog
-                                if (event.exception && " . ($showFeedback ? 'true' : 'false') . ") {
+                                if (event.exception && ".($showFeedback ? 'true' : 'false').") {
                                     Sentry.showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('name') });
                                 }
                                 return event;
@@ -47,7 +56,7 @@ class SentryJavaScript
                                     onerror: true,
                                     onunhandledrejection: true
                                 }),
-                                " . ($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '') . "
+                                ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '')."
                             ]
                         });
                         
