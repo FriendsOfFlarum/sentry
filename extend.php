@@ -13,15 +13,17 @@ namespace FoF\Sentry;
 
 use Flarum\Console\Event\Configuring;
 use Flarum\Event\ConfigureMiddleware;
-use Flarum\Extend;
+use Flarum\Extend as Native;
 use Flarum\Foundation\Application;
 use Illuminate\Events\Dispatcher;
 
 return [
-    (new Extend\Frontend('admin'))
+    (new Native\Frontend('forum'))
+        ->content(Content\SentryJavaScript::class),
+    (new Native\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Extend\Locales(__DIR__ . '/resources/locale'),
-    new Extend\Compat(function (Dispatcher $events, Application $app) {
+    new Native\Locales(__DIR__.'/resources/locale'),
+    new Native\Compat(function (Dispatcher $events, Application $app) {
         $app->register(SentryServiceProvider::class);
 
         $events->listen(ConfigureMiddleware::class, Listener\HandleHttpErrorsWithSentry::class);
