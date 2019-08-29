@@ -11,6 +11,8 @@
 
 namespace FoF\Sentry;
 
+use Flarum\Frontend\Assets;
+use Flarum\Frontend\Compiler\Source\SourceCollector;
 use Illuminate\Support\ServiceProvider;
 use Sentry\ClientBuilder;
 use Sentry\State\Hub;
@@ -50,5 +52,20 @@ class SentryServiceProvider extends ServiceProvider
         });
 
         $this->app->alias('sentry', HubInterface::class);
+
+        // js assets
+        $this->app->resolving('flarum.assets.forum', function (Assets $assets) {
+            if ((bool) (int) $this->app->make('flarum.settings')->get('fof-sentry.javascript')) {
+                $assets->js(function (SourceCollector $sources) {
+                    $sources->addString(function () {
+                        return 'var module={}';
+                    });
+                    $sources->addFile(__DIR__.'/../js/dist/forum.js');
+                    $sources->addString(function () {
+                        return "flarum.extensions['fof-sentry']=module.exports";
+                    });
+                });
+            }
+        });
     }
 }
