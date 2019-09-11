@@ -41,6 +41,7 @@ class SentryServiceProvider extends ServiceProvider
         }
         $this->app->singleton('sentry', function () {
             $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
+            $app = app();
 
             if ($dsn == null) {
                 return;
@@ -50,17 +51,18 @@ class SentryServiceProvider extends ServiceProvider
 
             $clientBuilder = ClientBuilder::create([
                 'dsn'            => $dsn,
-                'environment'    => app()->environment(),
+                'environment'    => $app->environment(),
                 'prefixes'       => [$base_path],
                 'project_root'   => $base_path,
+                'release'        => $app->version(),
             ]);
 
             $hub = Hub::setCurrent(new Hub($clientBuilder->getClient()));
 
-            $hub->configureScope(function (Scope $scope) {
-                $scope->setTag('offline', (int) app()->isDownForMaintenance());
-                $scope->setTag('debug', (int) app()->inDebugMode());
-                $scope->setTag('flarum', app()->version());
+            $hub->configureScope(function (Scope $scope) use ($app) {
+                $scope->setTag('offline', (int) $app->isDownForMaintenance());
+                $scope->setTag('debug', (int) $app->inDebugMode());
+                $scope->setTag('flarum', $app->version());
                 $scope->setTag('stack', app('sentry.stack'));
             });
 
