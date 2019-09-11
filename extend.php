@@ -16,7 +16,6 @@ use Flarum\Extend as Native;
 use Flarum\Foundation\Application;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
 use Illuminate\Events\Dispatcher;
-use Illuminate\View\Factory;
 
 return [
     (new Native\Frontend('forum'))

@@ -11,10 +11,10 @@
 
 namespace FoF\Sentry;
 
-use Flarum\Frontend\Assets;
-use Flarum\Frontend\Compiler\Source\SourceCollector;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
+use Flarum\Frontend\Assets;
+use Flarum\Frontend\Compiler\Source\SourceCollector;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Reporters\SentryReporter;
 use Illuminate\Support\ServiceProvider;
