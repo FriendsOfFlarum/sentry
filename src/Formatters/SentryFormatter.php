@@ -47,13 +47,14 @@ class SentryFormatter implements HttpFormatter
     public function format(HandledError $error, Request $request): Response
     {
         $response = $this->formatter->format($error, $request);
+        $settings = app('flarum.settings');
         $sentry = app('sentry');
 
-        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null || !((bool) (int) app('flarum.settings')->get('fof-sentry.user_feedback'))) {
+        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null || !((bool) (int) $settings->get('fof-sentry.user_feedback'))) {
             return $response;
         }
 
-        $dsn = app('flarum.settings')->get('fof-sentry.dsn');
+        $dsn = $settings->get('fof-sentry.dsn');
         $user = app('sentry.request')->getAttribute('actor');
         $locale = $this->translator->getLocale();
         $eventId = $sentry->getLastEventId();
