@@ -69,7 +69,7 @@ class SentryFormatter implements HttpFormatter
         $body->seek($body->getSize());
 
         $body->write("
-            <script src=\"https://browser.sentry-cdn.com/5.6.1/bundle.min.js\" integrity=\"sha384-pGTFmbQfua2KiaV2+ZLlfowPdd5VMT2xU4zCBcuJr7TVQozMO+I1FmPuVHY3u8KB\" crossorigin=\"anonymous\"></script>
+            <script src=\"https://browser.sentry-cdn.com/5.6.3/bundle.min.js\" integrity=\"sha384-/Cqa/8kaWn7emdqIBLk3AkFMAHBk0LObErtMhO+hr52CntkaurEnihPmqYj3uJho\" crossorigin=\"anonymous\"></script>
             
             <script>
                 Sentry.init({ dsn: '$dsn' });
