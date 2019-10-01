@@ -32,13 +32,12 @@ class SentryServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'fof-sentry');
-
         $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
         if ($dsn == null) {
             return;
         }
+        
         $this->app->singleton('sentry', function () {
             $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
             $app = app();
