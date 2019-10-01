@@ -1,9 +1,17 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2018 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace FoF\Sentry\Extend;
 
 use Flarum\Console\Event\Configuring;
-use Flarum\Event\ConfigureMiddleware;
 use Flarum\Extend\ExtenderInterface;
 use Flarum\Extension\Extension;
 use Illuminate\Contracts\Container\Container;
