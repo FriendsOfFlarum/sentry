@@ -11,11 +11,8 @@
 
 namespace FoF\Sentry;
 
-use Flarum\Event\ConfigureMiddleware;
 use Flarum\Extend as Native;
 use Flarum\Foundation\Application;
-use FoF\Sentry\Middleware\HandleErrorsWithSentry;
-use Illuminate\Events\Dispatcher;
 
 return [
     (new Native\Frontend('forum'))
@@ -23,13 +20,9 @@ return [
     (new Native\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
     new Native\Locales(__DIR__.'/locale'),
-    new Native\Compat(function (Dispatcher $events, Application $app) {
+    new Extend\HandleHttpErrors,
+    new Extend\HandleConsoleErrors,
+    new Native\Compat(function (Application $app) {
         $app->register(SentryServiceProvider::class);
-
-        $events->listen(ConfigureMiddleware::class, function (ConfigureMiddleware $event) use ($app) {
-            $app->instance('sentry.stack', $event->isApi() ? 'api' : ($event->isForum() ? 'forum' : 'admin'));
-
-            $event->pipe(app(HandleErrorsWithSentry::class));
-        });
     }),
 ];
