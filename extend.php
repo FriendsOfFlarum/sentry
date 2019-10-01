@@ -28,5 +28,5 @@ return [
 
         $events->listen(ConfigureMiddleware::class, Listener\HandleHttpErrorsWithSentry::class);
         $events->listen(Configuring::class, Listener\HandleConsoleErrorsWithSentry::class);
-    })
+    }),
 ];
