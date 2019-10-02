@@ -11,11 +11,13 @@
 
 namespace FoF\Sentry\Reporters;
 
+use Flarum\Foundation\Application;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
+use Symfony\Component\Console\Command\Command;
 use Throwable;
 
 class SentryReporter implements Reporter
@@ -24,21 +26,24 @@ class SentryReporter implements Reporter
      * @var LoggerInterface
      */
     protected $logger;
+    /**
+     * @var Application
+     */
+    protected $app;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, Application $app)
     {
         $this->logger = $logger;
+        $this->app = $app;
     }
 
     public function report(Throwable $error)
     {
-        /**
-         * @var HubInterface
-         * @var $request     ServerRequestInterface
-         * @var $stack       string
-         */
-        $hub = app('sentry');
-        $request = app('sentry.request');
+        /** @var HubInterface $hub */
+        $hub = $this->app->make('sentry');
+        /** @var string $stack */
+        $stack = $this->app->runningInConsole() ? 'console' : $this->app->make('sentry.stack');
+
         $id = null;
 
         if ($hub == null) {
@@ -47,6 +52,19 @@ class SentryReporter implements Reporter
             return;
         }
 
+        if ($stack !== 'console') {
+            $this->httpScope($hub, app('sentry.request'));
+        }
+
+        $id = $hub->captureException($error);
+
+        if ($id == null) {
+            $this->logger->warning('[fof/sentry] exception of type '.get_class($error).' failed to send');
+        }
+    }
+
+    protected function httpScope(HubInterface $hub, ServerRequestInterface $request): void
+    {
         $hub->configureScope(function (Scope $scope) use ($request) {
             $user = $request->getAttribute('actor');
 
@@ -58,11 +76,5 @@ class SentryReporter implements Reporter
                 ]);
             }
         });
-
-        $id = $hub->captureException($error);
-
-        if ($id == null) {
-            $this->logger->warning('[fof/sentry] exception of type '.get_class($error).' failed to send');
-        }
     }
 }

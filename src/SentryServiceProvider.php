@@ -51,7 +51,7 @@ class SentryServiceProvider extends ServiceProvider
                 $scope->setTag('offline', (int) $app->isDownForMaintenance());
                 $scope->setTag('debug', (int) $app->inDebugMode());
                 $scope->setTag('flarum', $app->version());
-                $scope->setTag('stack', app('sentry.stack'));
+                $scope->setTag('stack', $app->runningInConsole() ? 'console' : $app->make('sentry.stack'));
             });
 
             return $hub;
