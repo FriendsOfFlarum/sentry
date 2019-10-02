@@ -17,7 +17,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
-use Symfony\Component\Console\Command\Command;
 use Throwable;
 
 class SentryReporter implements Reporter
