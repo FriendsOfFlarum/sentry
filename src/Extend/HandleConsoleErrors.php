@@ -16,9 +16,6 @@ use Flarum\Extend\ExtenderInterface;
 use Flarum\Extension\Extension;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\Console\Event\ConsoleErrorEvent;
 
 class HandleConsoleErrors implements ExtenderInterface
 {
@@ -27,22 +24,8 @@ class HandleConsoleErrors implements ExtenderInterface
         /** @var Dispatcher $events */
         $events = $container->make(Dispatcher::class);
 
-        $events->listen(Configuring::class, function (Configuring $event) {
-            $event->eventDispatcher->addListener(ConsoleEvents::ERROR, [$this, 'listen']);
+        $events->listen(Configuring::class, function (Configuring $event) use ($container) {
+            $container->instance('sentry.stack', 'cli');
         });
-    }
-
-    public function listen(ConsoleErrorEvent $event)
-    {
-        app()->instance('sentry.stack', 'console');
-
-        if (app()->bound('sentry') && $sentry = app('sentry')) {
-            /** @var Command $command */
-            if ($command = $event->getCommand()) {
-                $sentry->context->extra['command'] = $command->getName();
-            }
-
-            $sentry->captureException($event->getError());
-        }
     }
 }

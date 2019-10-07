@@ -20,8 +20,8 @@ return [
     (new Native\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
     new Native\Locales(__DIR__.'/locale'),
-    new Extend\HandleHttpErrors(),
     new Extend\HandleConsoleErrors(),
+    new Extend\HandleHttpErrors(),
     new Native\Compat(function (Application $app) {
         $app->register(SentryServiceProvider::class);
     }),

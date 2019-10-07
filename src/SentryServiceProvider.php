@@ -11,6 +11,7 @@
 
 namespace FoF\Sentry;
 
+use Flarum\Foundation\Application;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Frontend\Assets;
@@ -28,14 +29,16 @@ class SentryServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton('sentry', function () {
-            $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
+            /** @var Application $app */
             $app = app();
+
+            $dsn = $app->make('flarum.settings')->get('fof-sentry.dsn');
 
             if ($dsn == null) {
                 return;
             }
 
-            $base_path = app('path.base');
+            $base_path = $app->basePath();
 
             $clientBuilder = ClientBuilder::create([
                 'dsn'            => $dsn,
@@ -51,7 +54,7 @@ class SentryServiceProvider extends ServiceProvider
                 $scope->setTag('offline', (int) $app->isDownForMaintenance());
                 $scope->setTag('debug', (int) $app->inDebugMode());
                 $scope->setTag('flarum', $app->version());
-                $scope->setTag('stack', app('sentry.stack'));
+                $scope->setTag('stack', $app->make('sentry.stack'));
             });
 
             return $hub;

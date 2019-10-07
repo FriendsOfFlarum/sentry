@@ -12,6 +12,7 @@
 namespace FoF\Sentry\Reporters;
 
 use Flarum\Foundation\ErrorHandling\Reporter;
+use Illuminate\Contracts\Container\Container;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
@@ -24,44 +25,46 @@ class SentryReporter implements Reporter
      * @var LoggerInterface
      */
     protected $logger;
+    /**
+     * @var Container
+     */
+    private $container;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, Container $container)
     {
         $this->logger = $logger;
+        $this->container = $container;
     }
 
     public function report(Throwable $error)
     {
-        /**
-         * @var HubInterface
-         * @var $request     ServerRequestInterface
-         * @var $stack       string
-         */
-        $hub = app('sentry');
-        $request = app('sentry.request');
-        $id = null;
+        /** @var HubInterface $hub */
+        $hub = $this->container->make('sentry');
 
-        if ($hub == null) {
+        if ($hub === null) {
             $this->logger->warning('[fof/sentry] sentry dsn not set');
 
             return;
         }
 
-        $hub->configureScope(function (Scope $scope) use ($request) {
-            $user = $request->getAttribute('actor');
+        if ($this->container->bound('sentry.request')) {
+            $hub->configureScope(function (Scope $scope) {
+                $request = $this->container->make('sentry.request');
+                $user = $request->getAttribute('actor');
 
-            if ($user != null && $user->id != 0) {
-                $scope->setUser([
-                    'id'       => $user->id,
-                    'username' => $user->username,
-                    'email'    => $user->email,
-                ]);
-            }
-        });
+                if ($user && $user->id !== 0) {
+                    $scope->setUser([
+                        'id'       => $user->id,
+                        'username' => $user->username,
+                        'email'    => $user->email,
+                    ]);
+                }
+            });
+        }
 
         $id = $hub->captureException($error);
 
-        if ($id == null) {
+        if ($id === null) {
             $this->logger->warning('[fof/sentry] exception of type '.get_class($error).' failed to send');
         }
     }
