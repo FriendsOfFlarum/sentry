@@ -13,7 +13,6 @@ namespace FoF\Sentry\Reporters;
 
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Illuminate\Contracts\Container\Container;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
