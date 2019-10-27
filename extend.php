@@ -20,7 +20,7 @@ return [
         ->content(Content\SentryJavaScript::class),
     (new Native\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Native\Locales(__DIR__ . '/resources/locale'),
+    new Native\Locales(__DIR__.'/resources/locale'),
     new Extend\HandleConsoleErrors(),
     new Extend\HandleHttpErrors(),
     new Native\Compat(function (Application $app) {
