@@ -47,15 +47,31 @@ class SentryJavaScript
                                 event.logger = 'javascript';
                                 // Check if it is an exception, and if so, show the report dialog
                                 if (event.exception && ".($showFeedback ? 'true' : 'false').") {
-                                    Sentry.showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('name') });
+                                    Sentry.showReportDialog({ eventId: event.event_id, user: Sentry.getUserData && Sentry.getUserData('name') });
                                 }
                                 return event;
                             },
+                            defaultIntegrations: false,
                             integrations: [
+                                new Sentry.Integrations.InboundFilters(),
+                                new Sentry.Integrations.FunctionToString(),
                                 new Sentry.Integrations.GlobalHandlers({
                                     onerror: true,
                                     onunhandledrejection: true
                                 }),
+                                new Sentry.Integrations.Breadcrumbs({
+                                    'console': true,
+                                    dom: true,
+                                    fetch: true,
+                                    history: true,
+                                    sentry: true,
+                                    xhr: true
+                                }),
+                                new Sentry.Integrations.LinkedErrors({
+                                    key: 'cause',
+                                    limit: 5,
+                                }),
+                                new Sentry.Integrations.UserAgent(),
                                 ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '')."
                             ]
                         });
