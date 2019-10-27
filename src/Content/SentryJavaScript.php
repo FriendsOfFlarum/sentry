@@ -43,7 +43,7 @@ class SentryJavaScript
                     if (window.Sentry) {
                         Sentry.init({
                             dsn: '$dsn',
-                            beforeSend(event) {
+                            beforeSend: function(event) {
                                 event.logger = 'javascript';
                                 // Check if it is an exception, and if so, show the report dialog
                                 if (event.exception && ".($showFeedback ? 'true' : 'false').") {
