@@ -12,7 +12,6 @@
 namespace FoF\Sentry;
 
 use ErrorException;
-use Flarum\Foundation\Application;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Frontend\Assets;
@@ -27,7 +26,8 @@ use Sentry\State\Scope;
 
 class SentryServiceProvider extends ServiceProvider
 {
-    public function boot() {
+    public function boot()
+    {
         error_reporting(-1);
 
         set_error_handler([$this, 'handleError']);
