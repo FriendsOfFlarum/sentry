@@ -11,6 +11,7 @@
 
 namespace FoF\Sentry;
 
+use ErrorException;
 use Flarum\Foundation\Application;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
@@ -26,35 +27,40 @@ use Sentry\State\Scope;
 
 class SentryServiceProvider extends ServiceProvider
 {
+    public function boot() {
+        error_reporting(-1);
+
+        set_error_handler([$this, 'handleError']);
+
+        ini_set('display_errors', 'Off');
+    }
+
     public function register()
     {
         $this->app->singleton('sentry', function () {
-            /** @var Application $app */
-            $app = app();
-
-            $dsn = $app->make('flarum.settings')->get('fof-sentry.dsn');
+            $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
             if ($dsn == null) {
                 return;
             }
 
-            $base_path = $app->basePath();
+            $base_path = $this->app->basePath();
 
             $clientBuilder = ClientBuilder::create([
                 'dsn'            => $dsn,
-                'environment'    => $app->environment(),
+                'environment'    => $this->app->environment(),
                 'prefixes'       => [$base_path],
                 'project_root'   => $base_path,
-                'release'        => $app->version(),
+                'release'        => $this->app->version(),
             ]);
 
             $hub = Hub::setCurrent(new Hub($clientBuilder->getClient()));
 
-            $hub->configureScope(function (Scope $scope) use ($app) {
-                $scope->setTag('offline', (int) $app->isDownForMaintenance());
-                $scope->setTag('debug', (int) $app->inDebugMode());
-                $scope->setTag('flarum', $app->version());
-                $scope->setTag('stack', $app->make('sentry.stack'));
+            $hub->configureScope(function (Scope $scope) {
+                $scope->setTag('offline', (int) $this->app->isDownForMaintenance());
+                $scope->setTag('debug', (int) $this->app->inDebugMode());
+                $scope->setTag('flarum', $this->app->version());
+                $scope->setTag('stack', $this->app->make('sentry.stack'));
             });
 
             return $hub;
@@ -82,5 +88,20 @@ class SentryServiceProvider extends ServiceProvider
                 });
             }
         });
+    }
+
+    public function handleError($level, $message, $file = '', $line = 0)
+    {
+        if (error_reporting() & $level) {
+            $error = new ErrorException($message, 0, $level, $file, $line);
+
+            if ($this->app->inDebugMode()) {
+                throw $error;
+            } else {
+                foreach ($this->app->tagged(Reporter::class) as $reporter) {
+                    $reporter->report($error);
+                }
+            }
+        }
     }
 }
