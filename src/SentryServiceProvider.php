@@ -92,6 +92,11 @@ class SentryServiceProvider extends ServiceProvider
 
     public function handleError($level, $message, $file = '', $line = 0)
     {
+        // ignore STMT_PREPARE errors because Eloquent automatically tries reconnecting
+        if (strpos($message, 'STMT_PREPARE packet') !== false) {
+            return false;
+        }
+
         if (error_reporting() & $level) {
             $error = new ErrorException($message, 0, $level, $file, $line);
 
