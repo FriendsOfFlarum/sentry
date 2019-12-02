@@ -8,7 +8,7 @@
   "license": "MIT",
   "require": {
     "flarum/core": "^0.1.0-beta.10",
-    "fof/components": ">0.1.0",
+    "fof/components": ">=0.1.0",
     "sentry/sdk": "^2.0.3"
   },
   "authors": [
