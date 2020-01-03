@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@sentry/browser": "^5.7.1",
-    "@sentry/integrations": "^5.7.1",
+    "@sentry/browser": "^5.10.2",
+    "@sentry/integrations": "^5.10.2",
     "flarum-webpack-config": "^0.1.0-beta.10",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9"
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
   },
   "scripts": {
     "dev": "webpack --mode development --watch",
@@ -15,6 +15,6 @@
     "lint": "prettier --single-quote --trailing-comma es5 --print-width 150 --tab-width 4 --write 'src/**/*'"
   },
   "devDependencies": {
-    "prettier": "^1.18.2"
+    "prettier": "^1.19.1"
   }
 }
