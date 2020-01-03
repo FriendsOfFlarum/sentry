@@ -15,7 +15,7 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
             data[nameAttr] = app.session.user.username();
 
             return data;
-        } else if (app.data.sesion && app.data.session.userId != 0) {
+        } else if (app.data.session && app.data.session.userId != 0) {
             return {
                 id: app.data.session.userId,
             };

@@ -1,6 +1,9 @@
 import { settings } from '@fof-components';
 
-const { SettingsModal, items: { StringItem, BooleanItem } } = settings;
+const {
+    SettingsModal,
+    items: { StringItem, BooleanItem },
+} = settings;
 
 app.initializers.add('fof/sentry', () => {
     app.extensionSettings['fof-sentry'] = () =>
