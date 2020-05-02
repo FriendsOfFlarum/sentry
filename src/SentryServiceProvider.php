@@ -41,7 +41,7 @@ class SentryServiceProvider extends ServiceProvider
             $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
             if ($dsn == null) {
-                return;
+                return null;
             }
 
             $base_path = $this->app->basePath();
