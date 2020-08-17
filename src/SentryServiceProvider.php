@@ -12,19 +12,19 @@
 namespace FoF\Sentry;
 
 use ErrorException;
+use Flarum\Foundation\AbstractServiceProvider;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Frontend\Assets;
 use Flarum\Frontend\Compiler\Source\SourceCollector;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Reporters\SentryReporter;
-use Illuminate\Support\ServiceProvider;
 use Sentry\ClientBuilder;
 use Sentry\State\Hub;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
 
-class SentryServiceProvider extends ServiceProvider
+class SentryServiceProvider extends AbstractServiceProvider
 {
     public function boot()
     {
