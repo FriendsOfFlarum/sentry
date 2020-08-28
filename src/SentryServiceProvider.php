@@ -13,12 +13,15 @@ namespace FoF\Sentry;
 
 use ErrorException;
 use Flarum\Foundation\AbstractServiceProvider;
+use Flarum\Foundation\Application;
 use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
+use Flarum\Foundation\Paths;
 use Flarum\Frontend\Assets;
 use Flarum\Frontend\Compiler\Source\SourceCollector;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Reporters\SentryReporter;
+use Illuminate\Support\Arr;
 use Sentry\ClientBuilder;
 use Sentry\State\Hub;
 use Sentry\State\HubInterface;
@@ -40,26 +43,33 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->app->singleton('sentry', function () {
             $dsn = $this->app->make('flarum.settings')->get('fof-sentry.dsn');
 
+            /**
+             * @var array $config
+             * @var Paths $paths
+             */
+            $config = $this->app->make('flarum.config');
+            $paths = $this->app->make('flarum.paths');
+
+
             if ($dsn == null) {
                 return null;
             }
 
-            $base_path = $this->app->basePath();
+            $base_path = $paths->base;
 
             $clientBuilder = ClientBuilder::create([
                 'dsn'            => $dsn,
-                'environment'    => $this->app->environment(),
                 'prefixes'       => [$base_path],
                 'project_root'   => $base_path,
-                'release'        => $this->app->version(),
+                'release'        => Application::VERSION,
             ]);
 
             $hub = Hub::setCurrent(new Hub($clientBuilder->getClient()));
 
-            $hub->configureScope(function (Scope $scope) {
-                $scope->setTag('offline', (int) $this->app->isDownForMaintenance());
-                $scope->setTag('debug', (int) $this->app->inDebugMode());
-                $scope->setTag('flarum', $this->app->version());
+            $hub->configureScope(function (Scope $scope) use ($config) {
+                $scope->setTag('offline', (int) Arr::get($config, 'offline', false));
+                $scope->setTag('debug', (int) Arr::get($config, 'debug', true));
+                $scope->setTag('flarum', Application::VERSION);
 
                 if ($this->app->bound('sentry.stack')) {
                     $scope->setTag('stack', $this->app->make('sentry.stack'));
