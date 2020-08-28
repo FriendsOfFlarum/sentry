@@ -50,7 +50,6 @@ class SentryServiceProvider extends AbstractServiceProvider
             $config = $this->app->make('flarum.config');
             $paths = $this->app->make('flarum.paths');
 
-
             if ($dsn == null) {
                 return null;
             }
