@@ -112,7 +112,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         if (error_reporting() & $level) {
             $error = new ErrorException($message, 0, $level, $file, $line);
 
-            if ($this->app->inDebugMode()) {
+            if (app('flarum')->inDebugMode()) {
                 throw $error;
             } else {
                 foreach ($this->app->tagged(Reporter::class) as $reporter) {
