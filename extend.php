@@ -18,7 +18,6 @@ use FoF\Sentry\Middleware\HandleErrorsWithSentry;
 
 return [
     new AddFofComponents(),
-    new Extend\HandleConsoleErrors(),
     (new Native\Frontend('forum'))
         ->css(__DIR__.'/resources/less/forum.less')
         ->content(Content\SentryJavaScript::class),
