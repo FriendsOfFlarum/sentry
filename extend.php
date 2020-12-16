@@ -13,11 +13,9 @@ namespace FoF\Sentry;
 
 use Flarum\Extend as Native;
 use Flarum\Foundation\Application;
-use FoF\Components\Extend\AddFofComponents;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
 
 return [
-    new AddFofComponents(),
     (new Native\Frontend('forum'))
         ->css(__DIR__.'/resources/less/forum.less')
         ->content(Content\SentryJavaScript::class),
@@ -30,7 +28,7 @@ return [
         ->add(HandleErrorsWithSentry::class),
     (new Native\Middleware('api'))
         ->add(HandleErrorsWithSentry::class),
-    new Native\Compat(function (Application $app) {
+    function (Application $app) {
         $app->register(SentryServiceProvider::class);
-    }),
+    },
 ];
