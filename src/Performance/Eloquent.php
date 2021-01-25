@@ -1,5 +1,13 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2020 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
 namespace FoF\Sentry\Performance;
 
@@ -15,9 +23,8 @@ class Eloquent extends Measure
         /** @var Dispatcher $events */
         $events = $this->container->make(Dispatcher::class);
 
-        $span = $this->transaction->startChild(new SpanContext);
+        $span = $this->transaction->startChild(new SpanContext());
         $span->setOp('eloquent');
-
 
         $events->listen(QueryExecuted::class, function (QueryExecuted $event) use ($span) {
             $end = microtime(true);

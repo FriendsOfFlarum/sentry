@@ -11,7 +11,6 @@
 
 namespace FoF\Sentry;
 
-use Carbon\Carbon;
 use ErrorException;
 use Flarum\Foundation\AbstractServiceProvider;
 use Flarum\Foundation\Application;
@@ -25,14 +24,12 @@ use FoF\Sentry\Contracts\Measure;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Reporters\SentryReporter;
 use Illuminate\Support\Arr;
+use function Sentry\init;
 use Sentry\SentrySdk;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
-use Sentry\Tracing\SpanContext;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionContext;
-
-use function Sentry\init;
 
 class SentryServiceProvider extends AbstractServiceProvider
 {
@@ -60,7 +57,6 @@ class SentryServiceProvider extends AbstractServiceProvider
         $dsn = $settings->get('fof-sentry.dsn');
         $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
 
-
         $this->app->singleton(HubInterface::class, function () use ($dsn, $performanceMonitoring) {
             $this->init($dsn, $performanceMonitoring);
 
@@ -84,54 +80,58 @@ class SentryServiceProvider extends AbstractServiceProvider
             static::$transactionStack[] = $transaction;
         }
 
-        $this->app->singleton('sentry', function () use ($dsn, $performanceMonitoring) {
-                if (! $dsn) {
-                    return null;
+        $this->app->singleton('sentry', function () use ($dsn) {
+            if (!$dsn) {
+                return null;
+            }
+
+            /** @var array $config */
+            $config = $this->app->make('flarum.config');
+
+            /** @var HubInterface $hub */
+            $hub = $this->app->make(HubInterface::class);
+
+            $hub->configureScope(function (Scope $scope) use ($config) {
+                $scope->setTag('offline', (int) Arr::get($config, 'offline', false));
+                $scope->setTag('debug', (int) Arr::get($config, 'debug', true));
+                $scope->setTag('flarum', Application::VERSION);
+
+                if ($this->app->bound('sentry.stack')) {
+                    $scope->setTag('stack', $this->app->make('sentry.stack'));
                 }
-
-                /** @var array $config */
-                $config = $this->app->make('flarum.config');
-
-                /** @var HubInterface $hub */
-                $hub = $this->app->make(HubInterface::class);
-
-                $hub->configureScope(function (Scope $scope) use ($config) {
-                    $scope->setTag('offline', (int)Arr::get($config, 'offline', false));
-                    $scope->setTag('debug', (int)Arr::get($config, 'debug', true));
-                    $scope->setTag('flarum', Application::VERSION);
-
-                    if ($this->app->bound('sentry.stack')) {
-                        $scope->setTag('stack', $this->app->make('sentry.stack'));
-                    }
-                });
-
-                return $hub;
             });
+
+            return $hub;
+        });
 
         $this->app->alias('sentry', HubInterface::class);
 
-        $this->app->extend(ViewFormatter::class,
+        $this->app->extend(
+            ViewFormatter::class,
             function (ViewFormatter $formatter) {
                 return new SentryFormatter($formatter);
-            });
+            }
+        );
 
         $this->app->tag(SentryReporter::class, Reporter::class);
 
         // js assets
-        $this->app->resolving('flarum.assets.forum',
+        $this->app->resolving(
+            'flarum.assets.forum',
             function (Assets $assets) {
-                if ((bool)(int)$this->app->make('flarum.settings')->get('fof-sentry.javascript')) {
+                if ((bool) (int) $this->app->make('flarum.settings')->get('fof-sentry.javascript')) {
                     $assets->js(function (SourceCollector $sources) {
                         $sources->addString(function () {
                             return 'var module={}';
                         });
-                        $sources->addFile(__DIR__ . '/../js/dist/forum.js');
+                        $sources->addFile(__DIR__.'/../js/dist/forum.js');
                         $sources->addString(function () {
                             return "flarum.extensions['fof-sentry']=module.exports";
                         });
                     });
                 }
-            });
+            }
+        );
     }
 
     protected function init(string $dsn, int $performanceMonitoring)
@@ -148,7 +148,7 @@ class SentryServiceProvider extends AbstractServiceProvider
             'in_app_include'        => [$paths->base],
             'traces_sample_rate'    => $tracesSampleRate,
             'environment'           => str_replace(['https://', 'http://'], null, Arr::get($config, 'url')),
-            'release'               => Application::VERSION
+            'release'               => Application::VERSION,
         ]);
     }
 

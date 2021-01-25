@@ -13,8 +13,6 @@ namespace FoF\Sentry\Content;
 
 use Flarum\Frontend\Document;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Sentry\SentrySdk;
-use Sentry\State\HubInterface;
 
 class SentryJavaScript
 {

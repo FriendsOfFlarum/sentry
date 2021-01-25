@@ -1,8 +1,15 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2020 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
 namespace FoF\Sentry\Performance;
-
 
 use Flarum\Extension\Event;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -13,9 +20,9 @@ use Sentry\Tracing\TransactionContext;
 class Extension extends Measure
 {
     /** @var Span */
-    static protected $parent;
+    protected static $parent;
     /** @var Span */
-    static protected $measure;
+    protected static $measure;
 
     public function handle(): ?Span
     {
@@ -32,7 +39,7 @@ class Extension extends Measure
 
     public function measure($event)
     {
-        $span = $this->transaction->startChild(new SpanContext);
+        $span = $this->transaction->startChild(new SpanContext());
         $span->setOp('extension');
 
         if ($event instanceof Event\Enabling || $event instanceof Event\Disabling) {
@@ -41,7 +48,7 @@ class Extension extends Measure
             ));
 
             static::$measure->setDescription($event->extension->name);
-        } else if (static::$measure) {
+        } elseif (static::$measure) {
             static::$measure->finish();
         }
     }

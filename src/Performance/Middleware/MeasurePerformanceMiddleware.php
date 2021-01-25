@@ -1,5 +1,13 @@
 <?php
 
+/*
+ * This file is part of fof/sentry
+ *
+ * Copyright (c) 2020 FriendsOfFlarum.
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
 
 namespace FoF\Sentry\Performance\Middleware;
 
@@ -27,7 +35,7 @@ class MeasurePerformanceMiddleware implements Middleware
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $span = $this->transaction->startChild(new SpanContext);
+        $span = $this->transaction->startChild(new SpanContext());
         $span->setOp("frontend.{$this->frontend}");
 
         $response = $handler->handle($request);
