@@ -13,6 +13,8 @@ namespace FoF\Sentry\Content;
 
 use Flarum\Frontend\Document;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Sentry\SentrySdk;
+use Sentry\State\HubInterface;
 
 class SentryJavaScript
 {
@@ -75,7 +77,7 @@ class SentryJavaScript
                                 ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '')."
                             ]
                         });
-                        
+
                         if (Sentry.getUserData) Sentry.setUser(Sentry.getUserData());
                     } else {
                         console.error('Unable to initialize Sentry');

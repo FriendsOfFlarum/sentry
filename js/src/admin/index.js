@@ -22,4 +22,9 @@ app.initializers.add('fof/sentry', () => {
       setting: 'fof-sentry.javascript.console',
       type: 'boolean',
     })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.monitor_performance_label'),
+      setting: 'fof-sentry.monitor_performance',
+      type: 'input',
+    })
 });

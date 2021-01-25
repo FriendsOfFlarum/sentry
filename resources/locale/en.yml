@@ -5,3 +5,4 @@ fof-sentry:
       user_feedback_label: User Feedback
       javascript_label: Report JavaScript Errors
       javascript_console_label: Capture JavaScript Console
+      monitor_performance_label: Performance Monitoring Rate (0 - 100)
