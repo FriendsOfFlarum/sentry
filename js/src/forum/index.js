@@ -1,8 +1,10 @@
 import * as Sentry from '@sentry/browser';
 import { CaptureConsole } from '@sentry/integrations';
+import { Integrations as TracingIntegrations } from '@sentry/tracing';
 
 window.Sentry = Sentry;
 window.Sentry.Integrations.CaptureConsole = CaptureConsole;
+window.Sentry.TracingIntegrations = TracingIntegrations;
 
 window.Sentry.getUserData = (nameAttr = 'username') => {
     if (app) {
