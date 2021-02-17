@@ -14,6 +14,7 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
     if (app) {
         if (app.session && app.session.user && app.session.user.id() != 0) {
             userData = {
+                ip_address: '{{auto}}',
                 id: app.session.user.id(),
                 email: app.session.user.email(),
                 [nameAttr]: app.session.user.username(),
