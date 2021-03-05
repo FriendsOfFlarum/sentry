@@ -55,6 +55,8 @@ class Extension extends Measure
 
     public function __destruct()
     {
-        static::$parent->finish();
+        if (static::$parent) {
+            static::$parent->finish();
+        }
     }
 }
