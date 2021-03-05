@@ -36,5 +36,10 @@ app.initializers.add('fof/sentry', () => {
             type: 'number',
             min: 0,
             max: 100,
+        })
+        .registerSetting({
+            label: app.translator.trans('fof-sentry.admin.settings.send_user_emails_label'),
+            setting: 'fof-sentry.send_emails_with_sentry_reports',
+            type: 'boolean',
         });
 });
