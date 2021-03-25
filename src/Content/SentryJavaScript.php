@@ -38,6 +38,17 @@ class SentryJavaScript
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
+        $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate', 0);
+        $tracesSampleRate /= 100;
+
+        // This needs to be between 0 and 1
+        if ($tracesSampleRate > 1) {
+            $tracesSampleRate = 1;
+        }
+        if ($tracesSampleRate < 0) {
+            $tracesSampleRate = 0;
+        }
+
         $document->foot[] = "
                 <script>
                     if (window.Sentry) {
@@ -52,7 +63,9 @@ class SentryJavaScript
                                 return event;
                             },
                             defaultIntegrations: false,
+                            tracesSampleRate: $tracesSampleRate,
                             integrations: [
+                                ".($tracesSampleRate > 0 ? 'new Sentry.TracingIntegrations.BrowserTracing(),' : '')."
                                 new Sentry.Integrations.InboundFilters(),
                                 new Sentry.Integrations.FunctionToString(),
                                 new Sentry.Integrations.GlobalHandlers({
@@ -75,7 +88,7 @@ class SentryJavaScript
                                 ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '')."
                             ]
                         });
-                        
+
                         if (Sentry.getUserData) Sentry.setUser(Sentry.getUserData());
                     } else {
                         console.error('Unable to initialize Sentry');

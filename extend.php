@@ -11,24 +11,22 @@
 
 namespace FoF\Sentry;
 
-use Flarum\Extend as Native;
-use Flarum\Foundation\Application;
+use Flarum\Extend as Flarum;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
 
 return [
-    (new Native\Frontend('forum'))
+    (new Flarum\ServiceProvider())
+        ->register(SentryServiceProvider::class),
+    (new Flarum\Frontend('forum'))
         ->css(__DIR__.'/resources/less/forum.less')
         ->content(Content\SentryJavaScript::class),
-    (new Native\Frontend('admin'))
+    (new Flarum\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
-    new Native\Locales(__DIR__.'/resources/locale'),
-    (new Native\Middleware('forum'))
+    new Flarum\Locales(__DIR__.'/resources/locale'),
+    (new Flarum\Middleware('forum'))
         ->add(HandleErrorsWithSentry::class),
-    (new Native\Middleware('admin'))
+    (new Flarum\Middleware('admin'))
         ->add(HandleErrorsWithSentry::class),
-    (new Native\Middleware('api'))
+    (new Flarum\Middleware('api'))
         ->add(HandleErrorsWithSentry::class),
-    function (Application $app) {
-        $app->register(SentryServiceProvider::class);
-    },
 ];
