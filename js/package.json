@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@sentry/browser": "^6.1.0",
-    "@sentry/integrations": "^6.1.0",
-    "@sentry/tracing": "^6.2.1",
+    "@sentry/browser": "^6.7.2",
+    "@sentry/integrations": "^6.7.2",
+    "@sentry/tracing": "^6.7.2",
     "flarum-webpack-config": "^1.0.0",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12"
