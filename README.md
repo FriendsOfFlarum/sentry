@@ -8,16 +8,16 @@ A [Flarum](http://flarum.org) extension. Flarum integration for [Sentry](https:/
 
 ### Installation
 
-Use [Bazaar](https://discuss.flarum.org/d/5151-flagrow-bazaar-the-extension-marketplace) or install manually with composer:
+Install with composer:
 
 ```sh
-composer require fof/sentry
+composer require fof/sentry:"*"
 ```
 
 ### Updating
 
 ```sh
-composer update fof/sentry
+composer update fof/sentry:"*"
 ```
 
 ### Links

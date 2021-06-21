@@ -44,7 +44,7 @@ class Extension extends Measure
 
         if ($event instanceof Event\Enabling || $event instanceof Event\Disabling) {
             static::$measure = $span->startChild(new TransactionContext(
-                $event instanceof Enabling ? 'extension.enabling' : 'extension.disabling'
+                $event instanceof Event\Enabling ? 'extension.enabling' : 'extension.disabling'
             ));
 
             static::$measure->setDescription($event->extension->name);

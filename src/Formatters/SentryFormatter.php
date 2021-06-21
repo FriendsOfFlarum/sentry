@@ -14,10 +14,11 @@ namespace FoF\Sentry\Formatters;
 use Flarum\Foundation\ErrorHandling\HandledError;
 use Flarum\Foundation\ErrorHandling\HttpFormatter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
+use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class SentryFormatter implements HttpFormatter
 {
@@ -40,22 +41,24 @@ class SentryFormatter implements HttpFormatter
     {
         $this->formatter = $formatter;
 
-        $this->view = app(ViewFactory::class);
-        $this->translator = app(TranslatorInterface::class);
+        $this->view = resolve(ViewFactory::class);
+        $this->translator = resolve(TranslatorInterface::class);
     }
 
     public function format(HandledError $error, Request $request): Response
     {
         $response = $this->formatter->format($error, $request);
-        $settings = app('flarum.settings');
-        $sentry = app('sentry');
+
+        /** @var SettingsRepositoryInterface */
+        $settings = resolve(SettingsRepositoryInterface::class);
+        $sentry = resolve('sentry');
 
         if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null || !((bool) (int) $settings->get('fof-sentry.user_feedback'))) {
             return $response;
         }
 
         $dsn = $settings->get('fof-sentry.dsn');
-        $user = app('sentry.request')->getAttribute('actor');
+        $user = resolve('sentry.request')->getAttribute('actor');
         $locale = $this->translator->getLocale();
         $eventId = $sentry->getLastEventId();
         $userData = ($user != null && $user->id != 0) ?
