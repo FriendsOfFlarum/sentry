@@ -12,7 +12,12 @@
 namespace FoF\Sentry;
 
 use Flarum\Extend as Flarum;
+use Flarum\Frontend\RecompileFrontendAssets;
+use Flarum\Locale\LocaleManager;
+use Flarum\Settings\Event\Saved;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
+use Illuminate\Container\Container;
+use Illuminate\Support\Str;
 
 return [
     (new Flarum\ServiceProvider())
@@ -35,4 +40,20 @@ return [
 
     (new Flarum\Middleware('api'))
         ->add(HandleErrorsWithSentry::class),
+
+    (new Flarum\Event())
+        ->listen(Saved::class, function (Saved $event) {
+            foreach ($event->settings as $key => $setting) {
+                if (Str::startsWith($key, 'fof-sentry.javascript')) {
+                    $container = Container::getInstance();
+                    $recompile = new RecompileFrontendAssets(
+                        $container->make('flarum.assets.forum'),
+                        $container->make(LocaleManager::class)
+                    );
+                    $recompile->flush();
+
+                    return;
+                }
+            }
+        })
 ];
