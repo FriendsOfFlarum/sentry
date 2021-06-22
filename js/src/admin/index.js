@@ -16,7 +16,9 @@ app.initializers.add('fof/sentry', () => {
         .registerSetting({
             label: app.translator.trans('fof-sentry.admin.settings.monitor_performance_label'),
             setting: 'fof-sentry.monitor_performance',
-            type: 'input',
+            type: 'number',
+            min: 0,
+            max: 100,
         })
         .registerSetting({
             label: app.translator.trans('fof-sentry.admin.settings.javascript_label'),
@@ -31,6 +33,8 @@ app.initializers.add('fof/sentry', () => {
         .registerSetting({
             label: app.translator.trans('fof-sentry.admin.settings.javascript_trace_sample_rate'),
             setting: 'fof-sentry.javascript.trace_sample_rate',
-            type: 'input',
+            type: 'number',
+            min: 0,
+            max: 100,
         });
 });
