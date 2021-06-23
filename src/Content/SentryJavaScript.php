@@ -38,6 +38,8 @@ class SentryJavaScript
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
+        $shouldScrubEmailsFromUserData = !((bool) (int) $this->settings->get('fof-sentry.send_emails_with_sentry_reports'));
+
         $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate', 0);
         $tracesSampleRate /= 100;
 
@@ -56,9 +58,16 @@ class SentryJavaScript
                             dsn: '$dsn',
                             beforeSend: function(event) {
                                 event.logger = 'javascript';
+
+                                ".($shouldScrubEmailsFromUserData ? '
+                                if (event.user) {
+                                    delete event.user.email;
+                                }
+                                ' : '').'
+
                                 // Check if it is an exception, and if so, show the report dialog
-                                if (event.exception && ".($showFeedback ? 'true' : 'false').") {
-                                    Sentry.showReportDialog({ eventId: event.event_id, user: Sentry.getUserData && Sentry.getUserData('name') });
+                                if (event.exception && '.($showFeedback ? 'true' : 'false').") {
+                                    Sentry.showReportDialog({ eventId: event.event_id, user: event.user });
                                 }
                                 return event;
                             },
@@ -85,11 +94,23 @@ class SentryJavaScript
                                     limit: 5,
                                 }),
                                 new Sentry.Integrations.UserAgent(),
-                                ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '')."
+                                ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '').'
                             ]
                         });
 
-                        if (Sentry.getUserData) Sentry.setUser(Sentry.getUserData());
+                        if (Sentry.getUserData) {
+                            let user = Sentry.getUserData();
+
+                            '.($shouldScrubEmailsFromUserData ? '
+                            // Remove PII
+                            if (user.email) {
+                                delete user.email;
+                            }
+                            ' :
+                            '')."
+
+                            Sentry.setUser(user);
+                        }
                     } else {
                         console.error('Unable to initialize Sentry');
                     }

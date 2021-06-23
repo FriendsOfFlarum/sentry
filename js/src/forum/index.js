@@ -6,6 +6,8 @@ window.Sentry = Sentry;
 window.Sentry.Integrations.CaptureConsole = CaptureConsole;
 window.Sentry.TracingIntegrations = TracingIntegrations;
 
+// All Sentry initialisation happens in `src/Content/SentryJavaScript.php`
+
 window.Sentry.getUserData = (nameAttr = 'username') => {
     /** @type {Sentry.User} */
     let userData = {};
