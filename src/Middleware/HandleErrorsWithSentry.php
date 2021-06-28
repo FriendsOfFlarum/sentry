@@ -11,6 +11,7 @@
 
 namespace FoF\Sentry\Middleware;
 
+use Illuminate\Container\Container;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -19,11 +20,21 @@ use Psr\Http\Server\RequestHandlerInterface;
 class HandleErrorsWithSentry implements MiddlewareInterface
 {
     /**
+     * @var Container
+     */
+    public $container;
+
+    public function __construct(Container $container)
+    {
+        $this->container = $container;
+    }
+    
+    /**
      * {@inheritdoc}
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        app()->instance('sentry.request', $request);
+        $this->container->instance('sentry.request', $request);
 
         return $handler->handle($request);
     }

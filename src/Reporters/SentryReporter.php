@@ -12,6 +12,7 @@
 namespace FoF\Sentry\Reporters;
 
 use Flarum\Foundation\ErrorHandling\Reporter;
+use Flarum\Http\RequestUtil;
 use Illuminate\Contracts\Container\Container;
 use Psr\Log\LoggerInterface;
 use Sentry\State\HubInterface;
@@ -37,9 +38,10 @@ class SentryReporter implements Reporter
 
     public function report(Throwable $error)
     {
+        //dd($error);
         /** @var HubInterface $hub */
         $hub = $this->container->make('sentry');
-
+//dd($hub);
         if ($hub === null) {
             $this->logger->warning('[fof/sentry] sentry dsn not set');
 
@@ -49,7 +51,7 @@ class SentryReporter implements Reporter
         if ($this->container->bound('sentry.request')) {
             $hub->configureScope(function (Scope $scope) {
                 $request = $this->container->make('sentry.request');
-                $user = $request->getAttribute('actor');
+                $user = RequestUtil::getActor($request);
 
                 if ($user && $user->id !== 0) {
                     $scope->setUser([

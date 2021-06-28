@@ -66,7 +66,7 @@ class SentryServiceProvider extends AbstractServiceProvider
 
         if ($dsn && $performanceMonitoring > 0) {
             /** @var HubInterface $hub */
-            $hub = resolve(HubInterface::class);
+            $hub = $this->container->make(HubInterface::class);
 
             $transaction = $hub->startTransaction(new TransactionContext('flarum'));
 
@@ -90,7 +90,7 @@ class SentryServiceProvider extends AbstractServiceProvider
             $config = $this->container->make('flarum.config');
 
             /** @var HubInterface $hub */
-            $hub = resolve(HubInterface::class);
+            $hub = $this->container->make(HubInterface::class);
 
             $hub->configureScope(function (Scope $scope) use ($config) {
                 $scope->setTag('offline', (int) Arr::get($config, 'offline', false));
@@ -98,7 +98,7 @@ class SentryServiceProvider extends AbstractServiceProvider
                 $scope->setTag('flarum', Application::VERSION);
 
                 if ($this->container->bound('sentry.stack')) {
-                    $scope->setTag('stack', resolve('sentry.stack'));
+                    $scope->setTag('stack', $this->container->make('sentry.stack'));
                 }
             });
 
@@ -138,12 +138,12 @@ class SentryServiceProvider extends AbstractServiceProvider
     protected function init(string $dsn, int $performanceMonitoring)
     {
         /** @var Paths $paths */
-        $paths = resolve(Paths::class);
+        $paths = $this->container->make(Paths::class);
 
         $tracesSampleRate = $performanceMonitoring > 0 ? round($performanceMonitoring / 100, 2) : 0;
 
         /** @var Config $config */
-        $config = resolve(Config::class);
+        $config = $this->container->make(Config::class);
 
         init([
             'dsn'                   => $dsn,
@@ -168,6 +168,9 @@ class SentryServiceProvider extends AbstractServiceProvider
                 throw $error;
             } else {
                 foreach ($this->container->tagged(Reporter::class) as $reporter) {
+                    /**
+                     * @var SentryReporter $reporter
+                     */
                     $reporter->report($error);
                 }
             }
