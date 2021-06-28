@@ -41,7 +41,7 @@ class SentryReporter implements Reporter
         //dd($error);
         /** @var HubInterface $hub */
         $hub = $this->container->make('sentry');
-//dd($hub);
+        //dd($hub);
         if ($hub === null) {
             $this->logger->warning('[fof/sentry] sentry dsn not set');
 

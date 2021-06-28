@@ -28,7 +28,7 @@ class HandleErrorsWithSentry implements MiddlewareInterface
     {
         $this->container = $container;
     }
-    
+
     /**
      * {@inheritdoc}
      */
