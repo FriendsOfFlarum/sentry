@@ -69,11 +69,10 @@ class SentryServiceProvider extends AbstractServiceProvider
             return SentrySdk::getCurrentHub();
         });
 
-
         $this->container->singleton('sentry', function ($container) {
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
-    
+
             $dsn = $settings->get('fof-sentry.dsn');
             if (!$dsn) {
                 return null;
@@ -132,7 +131,7 @@ class SentryServiceProvider extends AbstractServiceProvider
 
         $dsn = $settings->get('fof-sentry.dsn');
         $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
-    
+
         if ($dsn && $performanceMonitoring > 0) {
             /** @var HubInterface $hub */
             $hub = $this->container->make(HubInterface::class);
