@@ -42,52 +42,45 @@ class SentryServiceProvider extends AbstractServiceProvider
 
     protected static $transactionStack = [];
 
-    public function boot()
-    {
-        error_reporting(-1);
-
-        set_error_handler([$this, 'handleError']);
-
-        ini_set('display_errors', 'Off');
-    }
-
     public function register()
     {
-        /** @var SettingsRepositoryInterface $settings */
-        $settings = resolve(SettingsRepositoryInterface::class);
-        $dsn = $settings->get('fof-sentry.dsn');
-        $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
+        $this->container->singleton(HubInterface::class, function ($container) {
+            /** @var SettingsRepositoryInterface $settings */
+            $settings = $container->make(SettingsRepositoryInterface::class);
+            $dsn = $settings->get('fof-sentry.dsn');
+            $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
 
-        $this->container->singleton(HubInterface::class, function () use ($dsn, $performanceMonitoring) {
-            $this->init($dsn, $performanceMonitoring);
+            /** @var Paths $paths */
+            $paths = $container->make(Paths::class);
+
+            $tracesSampleRate = $performanceMonitoring > 0 ? round($performanceMonitoring / 100, 2) : 0;
+
+            /** @var Config $config */
+            $config = $container->make(Config::class);
+
+            init([
+                'dsn'                   => $dsn,
+                'in_app_include'        => [$paths->base],
+                'traces_sample_rate'    => $tracesSampleRate,
+                'environment'           => str_replace(['https://', 'http://'], '', Arr::get($config, 'url')),
+                'release'               => Application::VERSION,
+            ]);
 
             return SentrySdk::getCurrentHub();
         });
 
-        if ($dsn && $performanceMonitoring > 0) {
-            /** @var HubInterface $hub */
-            $hub = $this->container->make(HubInterface::class);
 
-            $transaction = $hub->startTransaction(new TransactionContext('flarum'));
-
-            foreach ($this->measurements as $measurement) {
-                /** @var Measure $measure */
-                $measure = new $measurement($transaction, $this->container);
-                if ($span = $measure->handle()) {
-                    static::$transactionStack[] = $span;
-                }
-            }
-
-            static::$transactionStack[] = $transaction;
-        }
-
-        $this->container->singleton('sentry', function () use ($dsn) {
+        $this->container->singleton('sentry', function ($container) {
+            /** @var SettingsRepositoryInterface $settings */
+            $settings = $container->make(SettingsRepositoryInterface::class);
+    
+            $dsn = $settings->get('fof-sentry.dsn');
             if (!$dsn) {
                 return null;
             }
 
-            /** @var array $config */
-            $config = $this->container->make('flarum.config');
+            /** @var Config $config */
+            $config = $container->make('flarum.config');
 
             /** @var HubInterface $hub */
             $hub = $this->container->make(HubInterface::class);
@@ -104,8 +97,6 @@ class SentryServiceProvider extends AbstractServiceProvider
 
             return $hub;
         });
-
-        $this->container->alias('sentry', HubInterface::class);
 
         $this->container->extend(
             ViewFormatter::class,
@@ -135,26 +126,32 @@ class SentryServiceProvider extends AbstractServiceProvider
         );
     }
 
-    protected function init(string $dsn, int $performanceMonitoring)
+    public function boot(SettingsRepositoryInterface $settings)
     {
-        /** @var Paths $paths */
-        $paths = $this->container->make(Paths::class);
+        set_error_handler([$this, 'handleError']);
 
-        $tracesSampleRate = $performanceMonitoring > 0 ? round($performanceMonitoring / 100, 2) : 0;
+        $dsn = $settings->get('fof-sentry.dsn');
+        $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
+    
+        if ($dsn && $performanceMonitoring > 0) {
+            /** @var HubInterface $hub */
+            $hub = $this->container->make(HubInterface::class);
 
-        /** @var Config $config */
-        $config = $this->container->make(Config::class);
+            $transaction = $hub->startTransaction(new TransactionContext('flarum'));
 
-        init([
-            'dsn'                   => $dsn,
-            'in_app_include'        => [$paths->base],
-            'traces_sample_rate'    => $tracesSampleRate,
-            'environment'           => str_replace(['https://', 'http://'], '', Arr::get($config, 'url')),
-            'release'               => Application::VERSION,
-        ]);
+            foreach ($this->measurements as $measurement) {
+                /** @var Measure $measure */
+                $measure = new $measurement($transaction, $this->container);
+                if ($span = $measure->handle()) {
+                    static::$transactionStack[] = $span;
+                }
+            }
+
+            static::$transactionStack[] = $transaction;
+        }
     }
 
-    public function handleError($level, $message, $file = '', $line = 0)
+    protected function handleError($level, $message, $file = '', $line = 0)
     {
         // ignore STMT_PREPARE errors because Eloquent automatically tries reconnecting
         if (strpos($message, 'STMT_PREPARE packet') !== false) {
