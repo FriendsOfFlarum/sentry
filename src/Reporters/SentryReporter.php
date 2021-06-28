@@ -38,10 +38,9 @@ class SentryReporter implements Reporter
 
     public function report(Throwable $error)
     {
-        //dd($error);
         /** @var HubInterface $hub */
         $hub = $this->container->make('sentry');
-        //dd($hub);
+
         if ($hub === null) {
             $this->logger->warning('[fof/sentry] sentry dsn not set');
 
