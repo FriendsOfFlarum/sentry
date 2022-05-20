@@ -48,7 +48,7 @@ class SentryServiceProvider extends AbstractServiceProvider
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
             $dsn = $settings->get('fof-sentry.dsn');
-            $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
+            $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
 
             /** @var Paths $paths */
             $paths = $container->make(Paths::class);
@@ -130,7 +130,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         set_error_handler([$this, 'handleError']);
 
         $dsn = $settings->get('fof-sentry.dsn');
-        $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance', 0);
+        $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
 
         if ($dsn && $performanceMonitoring > 0) {
             /** @var HubInterface $hub */

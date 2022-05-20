@@ -56,4 +56,7 @@ return [
                 }
             }
         }),
+
+    (new Flarum\Settings())
+        ->default('fof-sentry.monitor_performance', 0),
 ];
