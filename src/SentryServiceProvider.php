@@ -113,11 +113,11 @@ class SentryServiceProvider extends AbstractServiceProvider
                 if ((bool) (int) resolve('flarum.settings')->get('fof-sentry.javascript')) {
                     $assets->js(function (SourceCollector $sources) {
                         $sources->addString(function () {
-                            return 'var module={}';
+                            return 'var module={};';
                         });
                         $sources->addFile(__DIR__.'/../js/dist/forum.js');
                         $sources->addString(function () {
-                            return "flarum.extensions['fof-sentry']=module.exports";
+                            return "flarum.extensions['fof-sentry']=module.exports;";
                         });
                     });
                 }
