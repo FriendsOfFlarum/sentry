@@ -48,6 +48,7 @@ class SentryServiceProvider extends AbstractServiceProvider
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
             $dsn = $settings->get('fof-sentry.dsn');
+            $environment = $settings->get('fof-sentry.environment');
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
 
             /** @var Paths $paths */
@@ -55,14 +56,11 @@ class SentryServiceProvider extends AbstractServiceProvider
 
             $tracesSampleRate = $performanceMonitoring > 0 ? round($performanceMonitoring / 100, 2) : 0;
 
-            /** @var Config $config */
-            $config = $container->make(Config::class);
-
             init([
                 'dsn'                   => $dsn,
                 'in_app_include'        => [$paths->base],
                 'traces_sample_rate'    => $tracesSampleRate,
-                'environment'           => str_replace(['https://', 'http://'], '', Arr::get($config, 'url')),
+                'environment'           => $environment,
                 'release'               => Application::VERSION,
             ]);
 

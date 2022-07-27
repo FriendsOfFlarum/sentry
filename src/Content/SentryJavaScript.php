@@ -35,6 +35,7 @@ class SentryJavaScript
         }
 
         $dsn = $this->settings->get('fof-sentry.dsn');
+        $environment = $this->settings->get('fof-sentry.environment');
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
@@ -56,6 +57,7 @@ class SentryJavaScript
                     if (window.Sentry) {
                         Sentry.init({
                             dsn: '$dsn',
+                            environment: '$environment',
                             beforeSend: function(event) {
                                 event.logger = 'javascript';
 
