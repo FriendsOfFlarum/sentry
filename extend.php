@@ -13,6 +13,7 @@ namespace FoF\Sentry;
 
 use Flarum\Extend as Flarum;
 use Flarum\Frontend\RecompileFrontendAssets;
+use Flarum\Http\UrlGenerator;
 use Flarum\Locale\LocaleManager;
 use Flarum\Settings\Event\Saved;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
@@ -58,5 +59,6 @@ return [
         }),
 
     (new Flarum\Settings())
-        ->default('fof-sentry.monitor_performance', 0),
+        ->default('fof-sentry.monitor_performance', 0)
+        ->default('fof-sentry.environment', resolve(UrlGenerator::class)->to('forum')->base()),
 ];
