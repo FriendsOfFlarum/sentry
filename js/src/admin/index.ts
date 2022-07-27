@@ -9,6 +9,11 @@ app.initializers.add('fof/sentry', () => {
       type: 'url',
     })
     .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.environment_label'),
+      setting: 'fof-sentry.environment',
+      type: 'string',
+    })
+    .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.user_feedback_label'),
       setting: 'fof-sentry.user_feedback',
       type: 'boolean',
