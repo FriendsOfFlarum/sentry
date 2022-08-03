@@ -20,6 +20,7 @@ use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Foundation\Paths;
 use Flarum\Frontend\Assets;
 use Flarum\Frontend\Compiler\Source\SourceCollector;
+use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
 use FoF\Sentry\Contracts\Measure;
 use FoF\Sentry\Formatters\SentryFormatter;
@@ -47,8 +48,10 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->singleton(HubInterface::class, function ($container) {
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
+            /** @var UrlGenerator $urlGenerator */
+            $url = $container->make(UrlGenerator::class);
             $dsn = $settings->get('fof-sentry.dsn');
-            $environment = $settings->get('fof-sentry.environment');
+            $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
 
             /** @var Paths $paths */
