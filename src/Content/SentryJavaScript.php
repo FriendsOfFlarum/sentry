@@ -12,6 +12,7 @@
 namespace FoF\Sentry\Content;
 
 use Flarum\Frontend\Document;
+use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
 
 class SentryJavaScript
@@ -21,9 +22,15 @@ class SentryJavaScript
      */
     private $settings;
 
-    public function __construct(SettingsRepositoryInterface $settings)
+    /**
+     * @var UrlGenerator
+     */
+    private $url;
+
+    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url)
     {
         $this->settings = $settings;
+        $this->url = $url;
     }
 
     public function __invoke(Document $document)
@@ -35,6 +42,7 @@ class SentryJavaScript
         }
 
         $dsn = $this->settings->get('fof-sentry.dsn');
+        $environment = empty($this->settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $this->url->to('forum')->base()) : $this->settings->get('fof-sentry.environment');
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
@@ -56,6 +64,7 @@ class SentryJavaScript
                     if (window.Sentry) {
                         Sentry.init({
                             dsn: '$dsn',
+                            environment: '$environment',
                             beforeSend: function(event) {
                                 event.logger = 'javascript';
 
