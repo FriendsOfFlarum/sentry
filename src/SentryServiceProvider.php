@@ -26,12 +26,13 @@ use FoF\Sentry\Contracts\Measure;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Reporters\SentryReporter;
 use Illuminate\Support\Arr;
-use function Sentry\init;
 use Sentry\SentrySdk;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionContext;
+
+use function Sentry\init;
 
 class SentryServiceProvider extends AbstractServiceProvider
 {
