@@ -31,6 +31,17 @@ app.initializers.add('fof/sentry', () => {
       max: 100,
     })
     .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.profile_rate_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.profile_rate_help', {
+        br: <br />,
+        a: <a href="https://docs.sentry.io/platforms/php/profiling/#improve-response-time" target="_blank" />,
+      }),
+      setting: 'fof-sentry.profile_rate',
+      type: 'number',
+      min: 0,
+      max: 100,
+    })
+    .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.javascript_label'),
       setting: 'fof-sentry.javascript',
       type: 'boolean',
@@ -42,7 +53,7 @@ app.initializers.add('fof/sentry', () => {
     })
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.javascript_trace_sample_rate'),
-      help: app.translator.trans('fof-sentry.admin.settings.javascript_trace_sample_rate_help'),
+      help: app.translator.trans('fof-sentry.admin.settings.javascript_trace_sample_rate_help', { br: <br /> }),
       setting: 'fof-sentry.javascript.trace_sample_rate',
       type: 'number',
       min: 0,
@@ -50,7 +61,7 @@ app.initializers.add('fof/sentry', () => {
     })
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.javascript_replays_session_sample_rate'),
-      help: app.translator.trans('fof-sentry.admin.settings.javascript_replays_session_sample_rate_help'),
+      help: app.translator.trans('fof-sentry.admin.settings.javascript_replays_session_sample_rate_help', { br: <br /> }),
       setting: 'fof-sentry.javascript.replays_session_sample_rate',
       type: 'number',
       min: 0,
@@ -58,7 +69,7 @@ app.initializers.add('fof/sentry', () => {
     })
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.javascript_replays_error_sample_rate'),
-      help: app.translator.trans('fof-sentry.admin.settings.javascript_replays_error_sample_rate_help'),
+      help: app.translator.trans('fof-sentry.admin.settings.javascript_replays_error_sample_rate_help', { br: <br /> }),
       setting: 'fof-sentry.javascript.replays_error_sample_rate',
       type: 'number',
       min: 0,
