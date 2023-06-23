@@ -1,6 +1,8 @@
 import app from 'flarum/admin/app';
 
 app.initializers.add('fof/sentry', () => {
+  const hasExcimer = app.data['hasExcimer'];
+
   app.extensionData
     .for('fof-sentry')
     .registerSetting({
@@ -34,12 +36,15 @@ app.initializers.add('fof/sentry', () => {
       label: app.translator.trans('fof-sentry.admin.settings.profile_rate_label'),
       help: app.translator.trans('fof-sentry.admin.settings.profile_rate_help', {
         br: <br />,
+        bold: hasExcimer ? null : <b />,
+        icon: hasExcimer ? '✔' : '✖',
         a: <a href="https://docs.sentry.io/platforms/php/profiling/#improve-response-time" target="_blank" />,
       }),
       setting: 'fof-sentry.profile_rate',
       type: 'number',
       min: 0,
       max: 100,
+      disabled: !hasExcimer, // requires PHP extension
     })
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.javascript_label'),

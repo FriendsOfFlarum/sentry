@@ -8,7 +8,11 @@ fof-sentry:
 
       monitor_performance_label: Back-end Performance Monitoring Rate (0 - 100)
       profile_rate_label: Back-end Profiling Rate (0 - 100)
-      profile_rate_help: This is relative to the performance monitoring rate. Performance monitoring must be enabled for this to work. {br}✱ This feature requires Wikipedia's sampling profiler Excimer, which is only available for Linux.{br}✱ Enabling this feature affects response time due to the overhead of profiling and requests being sent to Sentry. Learn how to offset this @ <a>https://docs.sentry.io/platforms/php/profiling/#improve-response-time</a>.
+      profile_rate_help: |
+        This is relative to the performance monitoring rate. Performance monitoring must be enabled for this to work.
+
+        {br}✱ Enabling this feature affects response time due to the overhead of profiling and requests being sent to Sentry. Learn how to offset this @ <a>https://docs.sentry.io/platforms/php/profiling/#improve-response-time</a>.
+        {br}{icon} <bold>This feature requires Wikipedia's sampling profiler Excimer, which is only available for Linux.</bold>
 
       javascript_label: Report JavaScript Errors
       javascript_console_label: Capture JavaScript Console
