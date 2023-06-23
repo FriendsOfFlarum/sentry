@@ -62,64 +62,17 @@ class SentryJavaScript
         $document->foot[] = "
                 <script>
                     if (window.Sentry) {
-                        Sentry.init({
+                        const client = Sentry.createClient({
                             dsn: '$dsn',
                             environment: '$environment',
-                            beforeSend: function(event) {
-                                event.logger = 'javascript';
+                            scrubEmails: ".($shouldScrubEmailsFromUserData ? 'true' : 'false').",
+                            showFeedback: ".($showFeedback ? 'true' : 'false').",
 
-                                ".($shouldScrubEmailsFromUserData ? '
-                                if (event.user) {
-                                    delete event.user.email;
-                                }
-                                ' : '').'
-
-                                // Check if it is an exception, and if so, show the report dialog
-                                if (event.exception && '.($showFeedback ? 'true' : 'false').") {
-                                    Sentry.showReportDialog({ eventId: event.event_id, user: event.user });
-                                }
-                                return event;
-                            },
-                            defaultIntegrations: false,
+                            captureConsole: ".($captureConsole ? 'true' : 'false').",
                             tracesSampleRate: $tracesSampleRate,
-                            integrations: [
-                                ".($tracesSampleRate > 0 ? 'new Sentry.TracingIntegrations.BrowserTracing(),' : '')."
-                                new Sentry.Integrations.InboundFilters(),
-                                new Sentry.Integrations.FunctionToString(),
-                                new Sentry.Integrations.GlobalHandlers({
-                                    onerror: true,
-                                    onunhandledrejection: true
-                                }),
-                                new Sentry.Integrations.Breadcrumbs({
-                                    'console': true,
-                                    dom: true,
-                                    fetch: true,
-                                    history: true,
-                                    sentry: true,
-                                    xhr: true
-                                }),
-                                new Sentry.Integrations.LinkedErrors({
-                                    key: 'cause',
-                                    limit: 5,
-                                }),
-                                new Sentry.Integrations.HttpContext(),
-                                ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '').'
-                            ]
                         });
 
-                        if (Sentry.getUserData) {
-                            let user = Sentry.getUserData();
-
-                            '.($shouldScrubEmailsFromUserData ? '
-                            // Remove PII
-                            if (user.email) {
-                                delete user.email;
-                            }
-                            ' :
-                            '')."
-
-                            Sentry.setUser(user);
-                        }
+                        Sentry.getCurrentHub().bindClient(client);
                     } else {
                         console.error('Unable to initialize Sentry');
                     }

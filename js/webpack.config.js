@@ -13,9 +13,21 @@ const config = merge(
   }
 );
 
-const buildDist = (filename, env, define) => merge(
+const buildDist = (filename, env, define, buildAdmin = false) => merge(
   config,
   {
+    entry: () => {
+      const entries = {
+        forum: config.entry.forum,
+      };
+
+      // No need to build admin JS multiple times
+      if (buildAdmin) {
+        entries.admin = config.entry.admin;
+      }
+
+      return entries;
+    },
     output: {
       filename,
     },
@@ -29,12 +41,13 @@ const buildDist = (filename, env, define) => merge(
 );
 
 module.exports = env => {
-  console.log('env', env);
-
-  const noTracing = buildDist('[name].js', env, {
+  const plain = buildDist('[name].js', env, {
     __SENTRY_TRACING__: false,
-  });
-  const tracing = buildDist('[name].tracing.js', env);
+  }, true);
 
-  return [noTracing, tracing];
+  const tracing = buildDist('[name].tracing.js', env, {
+    __SENTRY_TRACING__: true,
+  });
+
+  return [plain, tracing];
 };

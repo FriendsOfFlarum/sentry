@@ -1,11 +1,78 @@
 import app from 'flarum/forum/app';
-import * as Sentry from '@sentry/browser';
-import { CaptureConsole } from '@sentry/integrations';
-import { Integrations as TracingIntegrations } from '@sentry/tracing';
 
-window.Sentry = Sentry;
-window.Sentry.Integrations.CaptureConsole = CaptureConsole;
-window.Sentry.TracingIntegrations = TracingIntegrations;
+import {
+  BrowserClient,
+  defaultStackParser,
+  getCurrentHub,
+  makeFetchTransport,
+  showReportDialog,
+  Breadcrumbs,
+  GlobalHandlers,
+  InboundFilters,
+  FunctionToString,
+  LinkedErrors,
+  HttpContext,
+  TryCatch,
+  BrowserTracing as SentryBrowserTracing,
+} from '@sentry/browser';
+
+import { CaptureConsole } from '@sentry/integrations';
+
+const integrations = [
+  new InboundFilters(),
+  new FunctionToString(),
+  new TryCatch(),
+  new GlobalHandlers({
+    onerror: true,
+    onunhandledrejection: true,
+  }),
+  new Breadcrumbs({
+    console: true,
+    dom: true,
+    fetch: true,
+    history: true,
+    sentry: true,
+    xhr: true,
+  }),
+  new LinkedErrors({
+    key: 'cause',
+    limit: 5,
+  }),
+  new HttpContext(),
+];
+
+if (__SENTRY_TRACING__) {
+  integrations.push(new SentryBrowserTracing());
+}
+
+const createClient = (config) =>
+  new BrowserClient({
+    dsn: config.dsn,
+
+    transport: makeFetchTransport,
+    stackParser: defaultStackParser,
+
+    beforeSend: (event) => {
+      event.logger = 'javascript';
+      event.user = Sentry.getUserData();
+
+      if (config.scrubEmails && event.user) {
+        delete event.user.email;
+      }
+
+      if (config.showFeedback && event.exception) {
+        showReportDialog({ eventId: event.event_id, user: event.user });
+      }
+
+      return event;
+    },
+
+    tracesSampleRate: config.tracesSampleRate,
+
+    integrations: [...integrations, config.captureConsole && new CaptureConsole()].filter(Boolean),
+  });
+
+window.Sentry = { createClient, getCurrentHub, showReportDialog };
 
 // All Sentry initialisation happens in `src/Content/SentryJavaScript.php`
 
