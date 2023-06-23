@@ -56,7 +56,7 @@ class SentryJavaScript
         $replaysSessionSampleRate = max(0, min(100, $replaysSessionSampleRate)) / 100;
         $replaysErrorSampleRate = max(0, min(100, $replaysErrorSampleRate)) / 100;
 
-        $document->payload['fof-sentry.scrub-emails'] = !!$shouldScrubEmailsFromUserData;
+        $document->payload['fof-sentry.scrub-emails'] = (bool) $shouldScrubEmailsFromUserData;
 
         $document->foot[] = "
                 <script>
@@ -64,10 +64,10 @@ class SentryJavaScript
                         const client = Sentry.createClient({
                             dsn: '$dsn',
                             environment: '$environment',
-                            scrubEmails: ".($shouldScrubEmailsFromUserData ? 'true' : 'false').",
-                            showFeedback: ".($showFeedback ? 'true' : 'false').",
+                            scrubEmails: ".($shouldScrubEmailsFromUserData ? 'true' : 'false').',
+                            showFeedback: '.($showFeedback ? 'true' : 'false').',
 
-                            captureConsole: ".($captureConsole ? 'true' : 'false').",
+                            captureConsole: '.($captureConsole ? 'true' : 'false').",
 
                             tracesSampleRate: $tracesSampleRate,
                             replaysSessionSampleRate: $replaysSessionSampleRate,

@@ -140,7 +140,7 @@ class SentryServiceProvider extends AbstractServiceProvider
                             $filename .= '.replay';
                         }
 
-                        $sources->addFile(__DIR__ . "/../js/dist/$filename.js");
+                        $sources->addFile(__DIR__."/../js/dist/$filename.js");
                         $sources->addString(function () {
                             return "flarum.extensions['fof-sentry']=module.exports;";
                         });
