@@ -13,7 +13,7 @@ const config = merge(
   }
 );
 
-const buildDist = (filename, env, define, buildAdmin = false) => merge(
+const buildDist = (filename, env, define = {}, buildAdmin = false) => merge(
   config,
   {
     entry: () => {
@@ -32,7 +32,11 @@ const buildDist = (filename, env, define, buildAdmin = false) => merge(
       filename,
     },
     plugins: [
-      define && new webpack.DefinePlugin(define),
+      new webpack.DefinePlugin({
+        __SENTRY_SESSION_REPLAY__: false,
+        __SENTRY_TRACING__: false,
+        ...define,
+      }),
       env.analyze && new BundleAnalyzerPlugin({
         analyzerPort: 'auto',
       }),
@@ -41,13 +45,20 @@ const buildDist = (filename, env, define, buildAdmin = false) => merge(
 );
 
 module.exports = env => {
-  const plain = buildDist('[name].js', env, {
-    __SENTRY_TRACING__: false,
-  }, true);
+  const plain = buildDist('[name].js', env, {}, true);
 
   const tracing = buildDist('[name].tracing.js', env, {
     __SENTRY_TRACING__: true,
   });
 
-  return [plain, tracing];
+  const replay = buildDist('[name].replay.js', env, {
+    __SENTRY_SESSION_REPLAY__: true,
+  });
+
+  const tracingAndReplay = buildDist('[name].tracing.replay.js', env, {
+    __SENTRY_TRACING__: true,
+    __SENTRY_SESSION_REPLAY__: true,
+  });
+
+  return [plain, tracing, replay, tracingAndReplay];
 };

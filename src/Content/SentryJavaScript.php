@@ -49,15 +49,14 @@ class SentryJavaScript
         $shouldScrubEmailsFromUserData = !((bool) (int) $this->settings->get('fof-sentry.send_emails_with_sentry_reports'));
 
         $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate', 0);
-        $tracesSampleRate /= 100;
+        $replaysSessionSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_session_sample_rate', 0);
+        $replaysErrorSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_error_sample_rate', 0);
 
-        // This needs to be between 0 and 1
-        if ($tracesSampleRate > 1) {
-            $tracesSampleRate = 1;
-        }
-        if ($tracesSampleRate < 0) {
-            $tracesSampleRate = 0;
-        }
+        $tracesSampleRate = max(0, min(100, $tracesSampleRate)) / 100;
+        $replaysSessionSampleRate = max(0, min(100, $replaysSessionSampleRate)) / 100;
+        $replaysErrorSampleRate = max(0, min(100, $replaysErrorSampleRate)) / 100;
+
+        $document->payload['fof-sentry.scrub-emails'] = !!$shouldScrubEmailsFromUserData;
 
         $document->foot[] = "
                 <script>
@@ -69,7 +68,10 @@ class SentryJavaScript
                             showFeedback: ".($showFeedback ? 'true' : 'false').",
 
                             captureConsole: ".($captureConsole ? 'true' : 'false').",
+
                             tracesSampleRate: $tracesSampleRate,
+                            replaysSessionSampleRate: $replaysSessionSampleRate,
+                            replaysOnErrorSampleRate: $replaysErrorSampleRate,
                         });
 
                         Sentry.getCurrentHub().bindClient(client);

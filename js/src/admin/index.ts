@@ -19,6 +19,11 @@ app.initializers.add('fof/sentry', () => {
       type: 'boolean',
     })
     .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.send_user_emails_label'),
+      setting: 'fof-sentry.send_emails_with_sentry_reports',
+      type: 'boolean',
+    })
+    .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.monitor_performance_label'),
       setting: 'fof-sentry.monitor_performance',
       type: 'number',
@@ -37,14 +42,26 @@ app.initializers.add('fof/sentry', () => {
     })
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.javascript_trace_sample_rate'),
+      help: app.translator.trans('fof-sentry.admin.settings.javascript_trace_sample_rate_help'),
       setting: 'fof-sentry.javascript.trace_sample_rate',
       type: 'number',
       min: 0,
       max: 100,
     })
     .registerSetting({
-      label: app.translator.trans('fof-sentry.admin.settings.send_user_emails_label'),
-      setting: 'fof-sentry.send_emails_with_sentry_reports',
-      type: 'boolean',
+      label: app.translator.trans('fof-sentry.admin.settings.javascript_replays_session_sample_rate'),
+      help: app.translator.trans('fof-sentry.admin.settings.javascript_replays_session_sample_rate_help'),
+      setting: 'fof-sentry.javascript.replays_session_sample_rate',
+      type: 'number',
+      min: 0,
+      max: 100,
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.javascript_replays_error_sample_rate'),
+      help: app.translator.trans('fof-sentry.admin.settings.javascript_replays_error_sample_rate_help'),
+      setting: 'fof-sentry.javascript.replays_error_sample_rate',
+      type: 'number',
+      min: 0,
+      max: 100,
     });
 });

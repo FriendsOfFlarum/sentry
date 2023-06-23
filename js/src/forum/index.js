@@ -13,7 +13,8 @@ import {
   LinkedErrors,
   HttpContext,
   TryCatch,
-  BrowserTracing as SentryBrowserTracing,
+  BrowserTracing,
+  Replay,
 } from '@sentry/browser';
 
 import { CaptureConsole } from '@sentry/integrations';
@@ -42,7 +43,11 @@ const integrations = [
 ];
 
 if (__SENTRY_TRACING__) {
-  integrations.push(new SentryBrowserTracing());
+  integrations.push(new BrowserTracing());
+}
+
+if (__SENTRY_SESSION_REPLAY__) {
+  integrations.push(new Replay());
 }
 
 const createClient = (config) =>
@@ -54,27 +59,26 @@ const createClient = (config) =>
 
     beforeSend: (event) => {
       event.logger = 'javascript';
-      event.user = Sentry.getUserData();
 
-      if (config.scrubEmails && event.user) {
+      if (config.scrubEmails && event.user?.email) {
         delete event.user.email;
       }
 
       if (config.showFeedback && event.exception) {
-        showReportDialog({ eventId: event.event_id, user: event.user });
+        showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('name') });
       }
 
       return event;
     },
 
     tracesSampleRate: config.tracesSampleRate,
+    replaysSessionSampleRate: config.replaysSessionSampleRate,
+    replaysOnErrorSampleRate: config.replaysOnErrorSampleRate,
 
     integrations: [...integrations, config.captureConsole && new CaptureConsole()].filter(Boolean),
   });
 
 window.Sentry = { createClient, getCurrentHub, showReportDialog };
-
-// All Sentry initialisation happens in `src/Content/SentryJavaScript.php`
 
 window.Sentry.getUserData = (nameAttr = 'username') => {
   /** @type {Sentry.User} */
@@ -82,13 +86,18 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
 
   // Depending on when the error occurs, `app` might not be defined
   if (app) {
-    if (app.session && app.session.user && app.session.user.id() != 0) {
+    const user = app.session?.user;
+
+    if (app.session && user && user.id() != 0) {
       userData = {
         ip_address: '{{auto}}',
-        id: app.session.user.id(),
-        email: app.session.user.email(),
-        [nameAttr]: app.session.user.username(),
+        id: user.id(),
+        [nameAttr]: user.username(),
       };
+
+      if (app.data['fof-sentry.scrub-emails']) {
+        userData[email] = user.email();
+      }
     } else if (app.data.session && app.data.session.userId != 0) {
       userData = {
         id: app.data.session.userId,
@@ -98,3 +107,7 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
 
   return userData;
 };
+
+app.initializers.add('fof/sentry', () => {
+  getCurrentHub().setUser(Sentry.getUserData());
+});
