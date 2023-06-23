@@ -53,11 +53,14 @@ class SentryReporter implements Reporter
                 $user = RequestUtil::getActor($request);
 
                 if ($user && $user->id !== 0) {
-                    $scope->setUser([
-                        'id'       => $user->id,
-                        'username' => $user->username,
-                        'email'    => $user->email,
-                    ]);
+                    $data = $user->only('id', 'username');
+
+                    // Only send email if enabled in settings
+                    if ((int) @resolve('flarum.settings')->get('fof-sentry.send_emails_with_sentry_reports')) {
+                        $data['email'] = $user->email;
+                    }
+
+                    $scope->setUser($data);
                 }
             });
         }
