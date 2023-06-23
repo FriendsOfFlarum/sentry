@@ -102,7 +102,7 @@ class SentryJavaScript
                                     key: 'cause',
                                     limit: 5,
                                 }),
-                                new Sentry.Integrations.UserAgent(),
+                                new Sentry.Integrations.HttpContext(),
                                 ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '').'
                             ]
                         });

@@ -112,12 +112,18 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->resolving(
             'flarum.assets.forum',
             function (Assets $assets) {
-                if ((bool) (int) resolve('flarum.settings')->get('fof-sentry.javascript')) {
+                $useJs = (int) resolve('flarum.settings')->get('fof-sentry.javascript');
+
+                if ($useJs) {
                     $assets->js(function (SourceCollector $sources) {
                         $sources->addString(function () {
                             return 'var module={};';
                         });
-                        $sources->addFile(__DIR__.'/../js/dist/forum.js');
+
+                        $traceSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.trace_sample_rate');
+                        $usePerformanceMonitoring = $traceSampleRate > 0;
+
+                        $sources->addFile(sprintf("%s/../js/dist/%s.js", __DIR__, $usePerformanceMonitoring ? 'forum.tracing' : 'forum'));
                         $sources->addString(function () {
                             return "flarum.extensions['fof-sentry']=module.exports;";
                         });
