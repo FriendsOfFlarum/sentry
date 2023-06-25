@@ -54,16 +54,19 @@ class SentryServiceProvider extends AbstractServiceProvider
             $dsn = $settings->get('fof-sentry.dsn');
             $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
+            $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate', 0);
 
             /** @var Paths $paths */
             $paths = $container->make(Paths::class);
 
-            $tracesSampleRate = $performanceMonitoring > 0 ? round($performanceMonitoring / 100, 2) : 0;
+            $tracesSampleRate = round(max(0, min(100, $performanceMonitoring))) / 100;
+            $profilesSampleRate = round(max(0, min(100, $profilesSampleRate))) / 100;
 
             init([
                 'dsn'                   => $dsn,
                 'in_app_include'        => [$paths->base],
                 'traces_sample_rate'    => $tracesSampleRate,
+                'profiles_sample_rate'  => $profilesSampleRate,
                 'environment'           => $environment,
                 'release'               => Application::VERSION,
             ]);
@@ -112,12 +115,32 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->resolving(
             'flarum.assets.forum',
             function (Assets $assets) {
-                if ((bool) (int) resolve('flarum.settings')->get('fof-sentry.javascript')) {
+                $useJs = (int) resolve('flarum.settings')->get('fof-sentry.javascript');
+
+                if ($useJs) {
                     $assets->js(function (SourceCollector $sources) {
                         $sources->addString(function () {
                             return 'var module={};';
                         });
-                        $sources->addFile(__DIR__.'/../js/dist/forum.js');
+
+                        $traceSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.trace_sample_rate');
+                        $replaysSessionSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.replays_session_sample_rate');
+                        $replaysErrorSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.replays_error_sample_rate');
+
+                        $usePerformanceMonitoring = $traceSampleRate > 0;
+                        $useReplay = $replaysSessionSampleRate > 0 || $replaysErrorSampleRate > 0;
+
+                        $filename = 'forum';
+
+                        if ($usePerformanceMonitoring) {
+                            $filename .= '.tracing';
+                        }
+
+                        if ($useReplay) {
+                            $filename .= '.replay';
+                        }
+
+                        $sources->addFile(__DIR__."/../js/dist/$filename.js");
                         $sources->addString(function () {
                             return "flarum.extensions['fof-sentry']=module.exports;";
                         });

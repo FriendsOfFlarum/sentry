@@ -12,6 +12,7 @@
 namespace FoF\Sentry;
 
 use Flarum\Extend as Flarum;
+use Flarum\Frontend\Document;
 use Flarum\Frontend\RecompileFrontendAssets;
 use Flarum\Locale\LocaleManager;
 use Flarum\Settings\Event\Saved;
@@ -28,7 +29,10 @@ return [
         ->content(Content\SentryJavaScript::class),
 
     (new Flarum\Frontend('admin'))
-        ->js(__DIR__.'/js/dist/admin.js'),
+        ->js(__DIR__.'/js/dist/admin.js')
+        ->content(function (Document $document) {
+            $document->payload['hasExcimer'] = extension_loaded('excimer');
+        }),
 
     new Flarum\Locales(__DIR__.'/resources/locale'),
 

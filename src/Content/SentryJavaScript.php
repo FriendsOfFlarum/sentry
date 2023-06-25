@@ -49,77 +49,32 @@ class SentryJavaScript
         $shouldScrubEmailsFromUserData = !((bool) (int) $this->settings->get('fof-sentry.send_emails_with_sentry_reports'));
 
         $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate', 0);
-        $tracesSampleRate /= 100;
+        $replaysSessionSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_session_sample_rate', 0);
+        $replaysErrorSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_error_sample_rate', 0);
 
-        // This needs to be between 0 and 1
-        if ($tracesSampleRate > 1) {
-            $tracesSampleRate = 1;
-        }
-        if ($tracesSampleRate < 0) {
-            $tracesSampleRate = 0;
-        }
+        $tracesSampleRate = max(0, min(100, $tracesSampleRate)) / 100;
+        $replaysSessionSampleRate = max(0, min(100, $replaysSessionSampleRate)) / 100;
+        $replaysErrorSampleRate = max(0, min(100, $replaysErrorSampleRate)) / 100;
+
+        $document->payload['fof-sentry.scrub-emails'] = (bool) $shouldScrubEmailsFromUserData;
 
         $document->foot[] = "
                 <script>
                     if (window.Sentry) {
-                        Sentry.init({
+                        const client = Sentry.createClient({
                             dsn: '$dsn',
                             environment: '$environment',
-                            beforeSend: function(event) {
-                                event.logger = 'javascript';
+                            scrubEmails: ".($shouldScrubEmailsFromUserData ? 'true' : 'false').',
+                            showFeedback: '.($showFeedback ? 'true' : 'false').',
 
-                                ".($shouldScrubEmailsFromUserData ? '
-                                if (event.user) {
-                                    delete event.user.email;
-                                }
-                                ' : '').'
+                            captureConsole: '.($captureConsole ? 'true' : 'false').",
 
-                                // Check if it is an exception, and if so, show the report dialog
-                                if (event.exception && '.($showFeedback ? 'true' : 'false').") {
-                                    Sentry.showReportDialog({ eventId: event.event_id, user: event.user });
-                                }
-                                return event;
-                            },
-                            defaultIntegrations: false,
                             tracesSampleRate: $tracesSampleRate,
-                            integrations: [
-                                ".($tracesSampleRate > 0 ? 'new Sentry.TracingIntegrations.BrowserTracing(),' : '')."
-                                new Sentry.Integrations.InboundFilters(),
-                                new Sentry.Integrations.FunctionToString(),
-                                new Sentry.Integrations.GlobalHandlers({
-                                    onerror: true,
-                                    onunhandledrejection: true
-                                }),
-                                new Sentry.Integrations.Breadcrumbs({
-                                    'console': true,
-                                    dom: true,
-                                    fetch: true,
-                                    history: true,
-                                    sentry: true,
-                                    xhr: true
-                                }),
-                                new Sentry.Integrations.LinkedErrors({
-                                    key: 'cause',
-                                    limit: 5,
-                                }),
-                                new Sentry.Integrations.UserAgent(),
-                                ".($captureConsole ? 'new Sentry.Integrations.CaptureConsole(),' : '').'
-                            ]
+                            replaysSessionSampleRate: $replaysSessionSampleRate,
+                            replaysOnErrorSampleRate: $replaysErrorSampleRate,
                         });
 
-                        if (Sentry.getUserData) {
-                            let user = Sentry.getUserData();
-
-                            '.($shouldScrubEmailsFromUserData ? '
-                            // Remove PII
-                            if (user.email) {
-                                delete user.email;
-                            }
-                            ' :
-                            '')."
-
-                            Sentry.setUser(user);
-                        }
+                        Sentry.getCurrentHub().bindClient(client);
                     } else {
                         console.error('Unable to initialize Sentry');
                     }
