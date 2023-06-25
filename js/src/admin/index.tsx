@@ -7,7 +7,15 @@ app.initializers.add('fof/sentry', () => {
     .for('fof-sentry')
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.dsn_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.dsn_help'),
       setting: 'fof-sentry.dsn',
+      type: 'url',
+      required: true,
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.dsn_backend_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.dsn_backend_help'),
+      setting: 'fof-sentry.dsn_backend',
       type: 'url',
     })
     .registerSetting({

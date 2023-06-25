@@ -51,10 +51,14 @@ class SentryServiceProvider extends AbstractServiceProvider
             $settings = $container->make(SettingsRepositoryInterface::class);
             /** @var UrlGenerator $urlGenerator */
             $url = $container->make(UrlGenerator::class);
-            $dsn = $settings->get('fof-sentry.dsn');
+            $dsn = $settings->get('fof-sentry.dsn_backend');
             $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
             $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate', 0);
+
+            if (empty($dsn)) {
+                $dsn = $settings->get('fof-sentry.dsn');
+            }
 
             /** @var Paths $paths */
             $paths = $container->make(Paths::class);

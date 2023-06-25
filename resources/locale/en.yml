@@ -2,6 +2,9 @@ fof-sentry:
   admin:
     settings:
       dsn_label: Sentry DSN
+      dsn_help: If you use a Relay DSN as the primary one, do not check "User Feedback" as it will not work.
+      dsn_backend_label: Sentry DSN (Backend Only)
+      dsn_backend_help: This DSN will only be used for backend errors. This is useful if you want to use a different project for backend errors or want to use a Relay to send backend errors to Sentry (eg. to improve performance).
       environment_label: Sentry Environment
       user_feedback_label: User Feedback
       send_user_emails_label: Send user email addresses with Sentry reports?
