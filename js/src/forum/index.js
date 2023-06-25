@@ -95,8 +95,8 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
         [nameAttr]: user.username(),
       };
 
-      if (app.data['fof-sentry.scrub-emails']) {
-        userData[email] = user.email();
+      if (!app.data['fof-sentry.scrub-emails']) {
+        userData.email = user.email();
       }
     } else if (app.data.session && app.data.session.userId != 0) {
       userData = {
