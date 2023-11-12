@@ -95,7 +95,7 @@ class SentryServiceProvider extends AbstractServiceProvider
 
             $hub->configureScope(function (Scope $scope) use ($config) {
                 $scope->setTag('offline', Arr::get($config, 'offline', false));
-                $scope->setTag('debug',  Arr::get($config, 'debug', true));
+                $scope->setTag('debug', Arr::get($config, 'debug', true));
                 $scope->setTag('flarum', Application::VERSION);
 
                 if ($this->container->bound('sentry.stack')) {
