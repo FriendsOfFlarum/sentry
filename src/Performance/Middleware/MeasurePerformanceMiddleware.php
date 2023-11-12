@@ -17,14 +17,17 @@ use Psr\Http\Server\MiddlewareInterface as Middleware;
 use Psr\Http\Server\RequestHandlerInterface;
 use Sentry\Tracing\Span;
 use Sentry\Tracing\SpanContext;
-use Sentry\Tracing\Transaction;
 
 class MeasurePerformanceMiddleware implements Middleware
 {
     /**
-     * @var Transaction
+     * @var Span
      */
     protected $transaction;
+
+    /**
+     * @var string
+     */
     protected $frontend;
 
     public function __construct(string $frontend, Span $transaction)
