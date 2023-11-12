@@ -48,14 +48,14 @@ class Extension extends Measure
             ));
 
             static::$measure->setDescription($event->extension->name);
-        } elseif (static::$measure) {
+        } elseif (static::$measure !== null) {
             static::$measure->finish();
         }
     }
 
     public function __destruct()
     {
-        if (static::$parent) {
+        if (static::$parent !== null) {
             static::$parent->finish();
         }
     }

@@ -49,7 +49,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->singleton(HubInterface::class, function ($container) {
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
-            /** @var UrlGenerator $urlGenerator */
+            /** @var UrlGenerator $url */
             $url = $container->make(UrlGenerator::class);
             $dsn = $settings->get('fof-sentry.dsn_backend');
             $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
@@ -94,8 +94,8 @@ class SentryServiceProvider extends AbstractServiceProvider
             $hub = $this->container->make(HubInterface::class);
 
             $hub->configureScope(function (Scope $scope) use ($config) {
-                $scope->setTag('offline', (int) Arr::get($config, 'offline', false));
-                $scope->setTag('debug', (int) Arr::get($config, 'debug', true));
+                $scope->setTag('offline', Arr::get($config, 'offline', false));
+                $scope->setTag('debug',  Arr::get($config, 'debug', true));
                 $scope->setTag('flarum', Application::VERSION);
 
                 if ($this->container->bound('sentry.stack')) {

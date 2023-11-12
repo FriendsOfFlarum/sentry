@@ -41,18 +41,12 @@ class SentryReporter implements Reporter
         /** @var HubInterface $hub */
         $hub = $this->container->make('sentry');
 
-        if ($hub === null) {
-            $this->logger->warning('[fof/sentry] sentry dsn not set');
-
-            return;
-        }
-
         if ($this->container->bound('sentry.request')) {
             $hub->configureScope(function (Scope $scope) {
                 $request = $this->container->make('sentry.request');
                 $user = RequestUtil::getActor($request);
 
-                if ($user && $user->id !== 0) {
+                if (!$user->isGuest() && $user->id !== 0) {
                     $data = $user->only('id', 'username');
 
                     // Only send email if enabled in settings
