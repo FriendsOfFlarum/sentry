@@ -5,7 +5,7 @@
   "prettier": "@flarum/prettier-config",
   "dependencies": {
     "@flarum/prettier-config": "^1.0.0",
-    "@sentry/browser": "^7.56.0",
+    "@sentry/browser": "^7.119.1",
     "@sentry/integrations": "^7.56.0",
     "@sentry/tracing": "^7.56.0",
     "flarum-tsconfig": "^1.0.2",
