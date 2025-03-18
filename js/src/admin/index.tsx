@@ -3,7 +3,7 @@ import app from 'flarum/admin/app';
 app.initializers.add('fof/sentry', () => {
   const hasExcimer = app.data['hasExcimer'];
 
-  app.extensionData
+  app.registry
     .for('fof-sentry')
     .registerSetting({
       label: app.translator.trans('fof-sentry.admin.settings.dsn_label'),
