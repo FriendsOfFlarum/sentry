@@ -19,14 +19,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class HandleErrorsWithSentry implements MiddlewareInterface
 {
-    /**
-     * @var Container
-     */
-    public $container;
-
-    public function __construct(Container $container)
+    public function __construct(public Container $container)
     {
-        $this->container = $container;
     }
 
     /**

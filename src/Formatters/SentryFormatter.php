@@ -23,11 +23,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class SentryFormatter implements HttpFormatter
 {
     /**
-     * @var ViewFormatter
-     */
-    private $formatter;
-
-    /**
      * @var ViewFactory
      */
     protected $view;
@@ -37,10 +32,8 @@ class SentryFormatter implements HttpFormatter
      */
     protected $translator;
 
-    public function __construct(ViewFormatter $formatter)
+    public function __construct(private ViewFormatter $formatter)
     {
-        $this->formatter = $formatter;
-
         $this->view = resolve(ViewFactory::class);
         $this->translator = resolve(TranslatorInterface::class);
     }

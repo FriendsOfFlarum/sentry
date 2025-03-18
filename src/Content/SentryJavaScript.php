@@ -17,20 +17,8 @@ use Flarum\Settings\SettingsRepositoryInterface;
 
 class SentryJavaScript
 {
-    /**
-     * @var SettingsRepositoryInterface
-     */
-    private $settings;
-
-    /**
-     * @var UrlGenerator
-     */
-    private $url;
-
-    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url)
+    public function __construct(private SettingsRepositoryInterface $settings, private UrlGenerator $url)
     {
-        $this->settings = $settings;
-        $this->url = $url;
     }
 
     public function __invoke(Document $document)

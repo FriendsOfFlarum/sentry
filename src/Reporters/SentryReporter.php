@@ -21,19 +21,8 @@ use Throwable;
 
 class SentryReporter implements Reporter
 {
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-    /**
-     * @var Container
-     */
-    private $container;
-
-    public function __construct(LoggerInterface $logger, Container $container)
+    public function __construct(protected LoggerInterface $logger, private Container $container)
     {
-        $this->logger = $logger;
-        $this->container = $container;
     }
 
     public function report(Throwable $error)
