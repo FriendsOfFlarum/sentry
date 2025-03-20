@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace FoF\Sentry\Reporters;
 
 use Flarum\Foundation\ErrorHandling\Reporter;
@@ -21,11 +23,9 @@ use Throwable;
 
 class SentryReporter implements Reporter
 {
-    public function __construct(protected LoggerInterface $logger, private Container $container)
-    {
-    }
+    public function __construct(protected LoggerInterface $logger, private Container $container) {}
 
-    public function report(Throwable $error)
+    public function report(Throwable $error): void
     {
         /** @var HubInterface $hub */
         $hub = $this->container->make('sentry');
@@ -35,7 +35,7 @@ class SentryReporter implements Reporter
                 $request = $this->container->make('sentry.request');
                 $user = RequestUtil::getActor($request);
 
-                if (!$user->isGuest() && $user->id !== 0) {
+                if (! $user->isGuest() && $user->id !== 0) {
                     $data = $user->only('id', 'username');
 
                     // Only send email if enabled in settings
@@ -48,9 +48,7 @@ class SentryReporter implements Reporter
             });
         }
 
-        $id = $hub->captureException($error);
-
-        if ($id === null) {
+        if ($hub->captureException($error) === null) {
             $this->logger->warning('[fof/sentry] exception of type '.get_class($error).' failed to send');
         }
     }

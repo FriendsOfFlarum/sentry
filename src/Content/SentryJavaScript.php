@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace FoF\Sentry\Content;
 
 use Flarum\Frontend\Document;
@@ -17,15 +19,11 @@ use Flarum\Settings\SettingsRepositoryInterface;
 
 class SentryJavaScript
 {
-    public function __construct(private SettingsRepositoryInterface $settings, private UrlGenerator $url)
-    {
-    }
+    public function __construct(private SettingsRepositoryInterface $settings, private UrlGenerator $url) {}
 
     public function __invoke(Document $document)
     {
-        $useJs = (bool) (int) $this->settings->get('fof-sentry.javascript');
-
-        if (!$useJs) {
+        if (! ((int) $this->settings->get('fof-sentry.javascript'))) {
             return;
         }
 
@@ -34,7 +32,7 @@ class SentryJavaScript
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
-        $shouldScrubEmailsFromUserData = !((bool) (int) $this->settings->get('fof-sentry.send_emails_with_sentry_reports'));
+        $shouldScrubEmailsFromUserData = !((int) $this->settings->get('fof-sentry.send_emails_with_sentry_reports'));
 
         $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate', 0);
         $replaysSessionSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_session_sample_rate', 0);
@@ -44,7 +42,7 @@ class SentryJavaScript
         $replaysSessionSampleRate = max(0, min(100, $replaysSessionSampleRate)) / 100;
         $replaysErrorSampleRate = max(0, min(100, $replaysErrorSampleRate)) / 100;
 
-        $document->payload['fof-sentry.scrub-emails'] = (bool) $shouldScrubEmailsFromUserData;
+        $document->payload['fof-sentry.scrub-emails'] = $shouldScrubEmailsFromUserData;
 
         $document->foot[] = "
                 <script>
@@ -62,7 +60,8 @@ class SentryJavaScript
                             replaysOnErrorSampleRate: $replaysErrorSampleRate,
                         });
 
-                        Sentry.getCurrentHub().bindClient(client);
+                        Sentry.setCurrentClient(client);
+                        client.init();
                     } else {
                         console.error('Unable to initialize Sentry');
                     }

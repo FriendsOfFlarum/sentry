@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace FoF\Sentry;
 
 use ErrorException;
@@ -49,8 +51,10 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->singleton(HubInterface::class, function ($container) {
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
+
             /** @var UrlGenerator $url */
             $url = $container->make(UrlGenerator::class);
+
             $dsn = $settings->get('fof-sentry.dsn_backend');
             $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
@@ -94,7 +98,7 @@ class SentryServiceProvider extends AbstractServiceProvider
             $hub = $this->container->make(HubInterface::class);
 
             $hub->configureScope(function (Scope $scope) use ($config) {
-                $scope->setTag('offline', Arr::get($config, 'offline', false));
+                $scope->setTag('offline', Arr::get($config, 'offline', 'false'));
                 $scope->setTag('debug', Arr::get($config, 'debug', true));
                 $scope->setTag('flarum', Application::VERSION);
 
@@ -179,25 +183,24 @@ class SentryServiceProvider extends AbstractServiceProvider
         }
     }
 
+    /** @throws ErrorException */
     public function handleError($level, $message, $file = '', $line = 0)
     {
         // ignore STMT_PREPARE errors because Eloquent automatically tries reconnecting
-        if (strpos($message, 'STMT_PREPARE packet') !== false) {
+        if (str_contains($message, 'STMT_PREPARE packet')) {
             return false;
         }
 
         if (error_reporting() & $level) {
             $error = new ErrorException($message, 0, $level, $file, $line);
 
-            if (resolve('flarum')->inDebugMode()) {
+            if (resolve('flarum.config')->inDebugMode()) {
                 throw $error;
-            } else {
-                foreach ($this->container->tagged(Reporter::class) as $reporter) {
-                    /**
-                     * @var SentryReporter $reporter
-                     */
-                    $reporter->report($error);
-                }
+            }
+
+            foreach ($this->container->tagged(Reporter::class) as $reporter) {
+                /** @var SentryReporter $reporter */
+                $reporter->report($error);
             }
         }
     }

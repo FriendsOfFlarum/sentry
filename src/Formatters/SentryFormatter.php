@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace FoF\Sentry\Formatters;
 
 use Flarum\Foundation\ErrorHandling\HandledError;
@@ -20,18 +22,8 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class SentryFormatter implements HttpFormatter
+class SentryFormatter extends ViewFormatter implements HttpFormatter
 {
-    /**
-     * @var ViewFactory
-     */
-    protected $view;
-
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
-
     public function __construct(private ViewFormatter $formatter)
     {
         $this->view = resolve(ViewFactory::class);
@@ -42,11 +34,11 @@ class SentryFormatter implements HttpFormatter
     {
         $response = $this->formatter->format($error, $request);
 
-        /** @var SettingsRepositoryInterface */
+        /** @var SettingsRepositoryInterface $settings */
         $settings = resolve(SettingsRepositoryInterface::class);
         $sentry = resolve('sentry');
 
-        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null || !((bool) (int) $settings->get('fof-sentry.user_feedback'))) {
+        if ($sentry === null || ! $error->shouldBeReported() || $sentry->getLastEventId() === null || ! ((int) $settings->get('fof-sentry.user_feedback'))) {
             return $response;
         }
 
@@ -54,7 +46,7 @@ class SentryFormatter implements HttpFormatter
         $user = resolve('sentry.request')->getAttribute('actor');
         $locale = $this->translator->getLocale();
         $eventId = $sentry->getLastEventId();
-        $userData = ($user != null && $user->id != 0) ?
+        $userData = ($user !== null && $user->id != 0) ?
             "user: {
                 email: '$user->email',
                 name: '$user->username'
@@ -65,7 +57,7 @@ class SentryFormatter implements HttpFormatter
         $body->seek($body->getSize());
 
         $body->write("
-            <script src=\"https://browser.sentry-cdn.com/5.25.0/bundle.min.js\" integrity=\"sha384-2p7fXoWSRPG49ZgmmJlTEI/01BY1LgxCNFQFiWpImAERmS/bROOQm+cJMdq/kmWS\" crossorigin=\"anonymous\"></script>
+            <script src=\"https://browser.sentry-cdn.com/9.6.1/bundle.min.js\" integrity=\"sha384-2p7fXoWSRPG49ZgmmJlTEI/01BY1LgxCNFQFiWpImAERmS/bROOQm+cJMdq/kmWS\" crossorigin=\"anonymous\"></script>
 
             <script>
                 Sentry.init({ dsn: '$dsn' });
