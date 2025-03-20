@@ -17,6 +17,12 @@
         "source": "https://github.com/FriendsOfFlarum/sentry",
         "forum": "https://discuss.flarum.org/d/18089"
     },
+    "funding": [
+        {
+            "type": "website",
+            "url": "https://opencollective.com/fof/donate"
+        }
+    ],
 
     "require": {
         "php": "^8.3",
