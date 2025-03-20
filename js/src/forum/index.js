@@ -12,6 +12,7 @@ import {
   browserApiErrorsIntegration,
   browserTracingIntegration,
   functionToStringIntegration,
+  httpContextIntegration,
   inboundFiltersIntegration,
   linkedErrorsIntegration,
   replayIntegration,
@@ -39,6 +40,7 @@ const integrations = [
     key: 'cause',
     limit: 5,
   }),
+  httpContextIntegration(),
 ];
 
 if (__SENTRY_TRACING__) {
