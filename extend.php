@@ -9,9 +9,11 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace FoF\Sentry;
 
-use Flarum\Extend as Flarum;
+use Flarum\Extend;
 use Flarum\Frontend\Document;
 use Flarum\Frontend\RecompileFrontendAssets;
 use Flarum\Locale\LocaleManager;
@@ -21,31 +23,31 @@ use Illuminate\Container\Container;
 use Illuminate\Support\Str;
 
 return [
-    (new Flarum\ServiceProvider())
+    (new Extend\ServiceProvider())
         ->register(SentryServiceProvider::class),
 
-    (new Flarum\Frontend('forum'))
+    (new Extend\Frontend('forum'))
         ->css(__DIR__.'/resources/less/forum.less')
         ->content(Content\SentryJavaScript::class),
 
-    (new Flarum\Frontend('admin'))
+    (new Extend\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js')
         ->content(function (Document $document) {
             $document->payload['hasExcimer'] = extension_loaded('excimer');
         }),
 
-    new Flarum\Locales(__DIR__.'/resources/locale'),
+    new Extend\Locales(__DIR__.'/resources/locale'),
 
-    (new Flarum\Middleware('forum'))
+    (new Extend\Middleware('forum'))
         ->add(HandleErrorsWithSentry::class),
 
-    (new Flarum\Middleware('admin'))
+    (new Extend\Middleware('admin'))
         ->add(HandleErrorsWithSentry::class),
 
-    (new Flarum\Middleware('api'))
+    (new Extend\Middleware('api'))
         ->add(HandleErrorsWithSentry::class),
 
-    (new Flarum\Event())
+    (new Extend\Event())
         ->listen(Saved::class, function (Saved $event) {
             foreach ($event->settings as $key => $setting) {
                 if (Str::startsWith($key, 'fof-sentry.javascript')) {
@@ -61,6 +63,6 @@ return [
             }
         }),
 
-    (new Flarum\Settings())
+    (new Extend\Settings())
         ->default('fof-sentry.monitor_performance', 0),
 ];

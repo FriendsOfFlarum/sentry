@@ -1,27 +1,27 @@
 {
   "name": "@fof/sentry",
-  "version": "0.0.0",
+  "version": "1.0.1",
   "private": true,
   "prettier": "@flarum/prettier-config",
-  "dependencies": {
-    "@flarum/prettier-config": "^1.0.0",
-    "@sentry/browser": "^7.119.1",
-    "@sentry/integrations": "^7.56.0",
-    "@sentry/tracing": "^7.56.0",
-    "flarum-tsconfig": "^1.0.2",
-    "flarum-webpack-config": "^2.0.0",
-    "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4"
-  },
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "format": "prettier --write src",
     "format-check": "prettier --check src"
   },
+  "dependencies": {
+    "@sentry/browser": "^9.6.1",
+    "@sentry/integrations": "^7.120.3",
+    "@sentry/tracing": "^7.120.3"
+  },
   "devDependencies": {
-    "prettier": "^3.0.3",
-    "webpack-bundle-analyzer": "^4.9.0",
-    "webpack-merge": "^5.9.0"
+    "@flarum/prettier-config": "^1.0.0",
+    "prettier": "^3.5.3",
+    "flarum-tsconfig": "^2.0.0",
+    "flarum-webpack-config": "^3.0.1",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "webpack-merge": "^6.0.1"
   }
 }

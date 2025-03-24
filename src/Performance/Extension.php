@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
  */
 
+declare(strict_types=1);
+
 namespace FoF\Sentry\Performance;
 
 use Flarum\Extension\Event;
@@ -21,6 +23,7 @@ class Extension extends Measure
 {
     /** @var Span */
     protected static $parent;
+
     /** @var Span */
     protected static $measure;
 
@@ -55,8 +58,6 @@ class Extension extends Measure
 
     public function __destruct()
     {
-        if (static::$parent !== null) {
-            static::$parent->finish();
-        }
+        static::$parent?->finish();
     }
 }
