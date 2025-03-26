@@ -62,5 +62,13 @@ return [
         }),
 
     (new Flarum\Settings())
-        ->default('fof-sentry.monitor_performance', 0),
+        ->default('fof-sentry.monitor_performance', 0)
+        ->default('fof-sentry.send_emails_with_sentry_reports', false)
+        ->default('fof-sentry.user_feedback', false)
+        ->default('fof-sentry.javascript.console', false)
+        ->default('fof-sentry.javascript.trace_sample_rate', 0)
+        ->default('fof-sentry.javascript.replays_session_sample_rate', 0)
+        ->default('fof-sentry.javascript.replays_error_sample_rate', 0)
+        ->default('fof-sentry.profile_rate', 0)
+        ->default('fof-sentry.javascript', true),
 ];

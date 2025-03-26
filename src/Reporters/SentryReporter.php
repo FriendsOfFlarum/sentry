@@ -50,7 +50,7 @@ class SentryReporter implements Reporter
                     $data = $user->only('id', 'username');
 
                     // Only send email if enabled in settings
-                    if ((int) @resolve('flarum.settings')->get('fof-sentry.send_emails_with_sentry_reports')) {
+                    if ((bool) resolve('flarum.settings')->get('fof-sentry.send_emails_with_sentry_reports')) {
                         $data['email'] = $user->email;
                     }
 
