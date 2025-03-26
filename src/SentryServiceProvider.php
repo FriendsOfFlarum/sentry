@@ -46,15 +46,21 @@ class SentryServiceProvider extends AbstractServiceProvider
 
     public function register()
     {
+        $this->container->singleton('sentry.release', function () {
+            return Application::VERSION;
+        });
+
         $this->container->singleton(HubInterface::class, function ($container) {
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
             /** @var UrlGenerator $url */
             $url = $container->make(UrlGenerator::class);
             $dsn = $settings->get('fof-sentry.dsn_backend');
+            /** @var string $release */
+            $release = $container->make('sentry.release');
             $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
-            $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate', 0);
+            $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate');
 
             if (empty($dsn)) {
                 $dsn = $settings->get('fof-sentry.dsn');
@@ -72,7 +78,7 @@ class SentryServiceProvider extends AbstractServiceProvider
                 'traces_sample_rate'    => $tracesSampleRate,
                 'profiles_sample_rate'  => $profilesSampleRate,
                 'environment'           => $environment,
-                'release'               => Application::VERSION,
+                'release'               => $release,
             ]);
 
             return SentrySdk::getCurrentHub();
@@ -94,8 +100,8 @@ class SentryServiceProvider extends AbstractServiceProvider
             $hub = $this->container->make(HubInterface::class);
 
             $hub->configureScope(function (Scope $scope) use ($config) {
-                $scope->setTag('offline', Arr::get($config, 'offline', false));
-                $scope->setTag('debug', Arr::get($config, 'debug', true));
+                $scope->setTag('offline', $this->booleanToString(Arr::get($config, 'offline', false)));
+                $scope->setTag('debug', $this->booleanToString(Arr::get($config, 'debug', true)));
                 $scope->setTag('flarum', Application::VERSION);
 
                 if ($this->container->bound('sentry.stack')) {
@@ -208,5 +214,13 @@ class SentryServiceProvider extends AbstractServiceProvider
         foreach (static::$transactionStack as $transaction) {
             $transaction->finish();
         }
+    }
+
+    /**
+     * A simple helper to convert a boolean to a string.
+     */
+    public function booleanToString(bool $value): string
+    {
+        return $value ? 'true' : 'false';
     }
 }

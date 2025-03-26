@@ -14,6 +14,7 @@ namespace FoF\Sentry\Formatters;
 use Flarum\Foundation\ErrorHandling\HandledError;
 use Flarum\Foundation\ErrorHandling\HttpFormatter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
+use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -58,7 +59,7 @@ class SentryFormatter implements HttpFormatter
         }
 
         $dsn = $settings->get('fof-sentry.dsn');
-        $user = resolve('sentry.request')->getAttribute('actor');
+        $user = RequestUtil::getActor(resolve('sentry.request'));
         $locale = $this->translator->getLocale();
         $eventId = $sentry->getLastEventId();
         $userData = ($user != null && $user->id != 0) ?
@@ -72,7 +73,7 @@ class SentryFormatter implements HttpFormatter
         $body->seek($body->getSize());
 
         $body->write("
-            <script src=\"https://browser.sentry-cdn.com/5.25.0/bundle.min.js\" integrity=\"sha384-2p7fXoWSRPG49ZgmmJlTEI/01BY1LgxCNFQFiWpImAERmS/bROOQm+cJMdq/kmWS\" crossorigin=\"anonymous\"></script>
+            <script src=\"https://browser.sentry-cdn.com/7.91.0/bundle.min.js\" integrity=\"sha384-2p7fXoWSRPG49ZgmmJlTEI/01BY1LgxCNFQFiWpImAERmS/bROOQm+cJMdq/kmWS\" crossorigin=\"anonymous\"></script>
 
             <script>
                 Sentry.init({ dsn: '$dsn' });

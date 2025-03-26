@@ -48,9 +48,9 @@ class SentryJavaScript
 
         $shouldScrubEmailsFromUserData = !((bool) (int) $this->settings->get('fof-sentry.send_emails_with_sentry_reports'));
 
-        $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate', 0);
-        $replaysSessionSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_session_sample_rate', 0);
-        $replaysErrorSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_error_sample_rate', 0);
+        $tracesSampleRate = (int) $this->settings->get('fof-sentry.javascript.trace_sample_rate');
+        $replaysSessionSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_session_sample_rate');
+        $replaysErrorSampleRate = (int) $this->settings->get('fof-sentry.javascript.replays_error_sample_rate');
 
         $tracesSampleRate = max(0, min(100, $tracesSampleRate)) / 100;
         $replaysSessionSampleRate = max(0, min(100, $replaysSessionSampleRate)) / 100;
