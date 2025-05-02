@@ -11,8 +11,8 @@
 
 namespace FoF\Sentry\Extend;
 
-use Flarum\Extension\Extension;
 use Flarum\Extend\ExtenderInterface;
+use Flarum\Extension\Extension;
 use Illuminate\Contracts\Container\Container;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
@@ -27,68 +27,78 @@ class Sentry implements ExtenderInterface
 
     /**
      * Set a custom release version.
-     * 
+     *
      * @param string $release The release version to use
+     *
      * @return self
      */
     public function setRelease(string $release): self
     {
         $this->customRelease = $release;
+
         return $this;
     }
 
     /**
      * Set a custom environment name.
-     * 
+     *
      * @param string $environment The environment name to use
+     *
      * @return self
      */
     public function setEnvironment(string $environment): self
     {
         $this->customEnvironment = $environment;
+
         return $this;
     }
 
     /**
      * Add a custom configuration option for the PHP SDK.
-     * 
-     * @param string $key Configuration key
-     * @param mixed $value Configuration value
+     *
+     * @param string $key   Configuration key
+     * @param mixed  $value Configuration value
+     *
      * @return self
      */
     public function addBackendConfig(string $key, $value): self
     {
         $this->backendConfig[$key] = $value;
+
         return $this;
     }
 
     /**
      * Add a custom configuration option for the JavaScript SDK.
-     * 
-     * @param string $key Configuration key
-     * @param mixed $value Configuration value
+     *
+     * @param string $key   Configuration key
+     * @param mixed  $value Configuration value
+     *
      * @return self
      */
     public function addFrontendConfig(string $key, $value): self
     {
         $this->frontendConfig[$key] = $value;
+
         return $this;
     }
 
     /**
      * Add a tag that will be sent with all events.
-     * 
-     * @param string $key Tag key
+     *
+     * @param string $key   Tag key
      * @param string $value Tag value
+     *
      * @return self
      */
     public function addTag(string $key, string $value): self
     {
         $this->tags[$key] = $value;
+
         return $this;
     }
 
-    public function extend(Container $container, Extension $extension = null)
+    public function extend(Container $container, ?Extension $extension = null)
     {
         // Override the release version if set
         if ($this->customRelease !== null) {
@@ -126,15 +136,17 @@ class Sentry implements ExtenderInterface
                         $scope->setTag($key, $value);
                     }
                 });
+
                 return $hub;
             });
-            
+
             // Also add tags to frontend config
             $container->extend('fof.sentry.frontend.config', function ($config) {
                 if (!isset($config['tags'])) {
                     $config['tags'] = [];
                 }
                 $config['tags'] = array_merge($config['tags'] ?? [], $this->tags);
+
                 return $config;
             });
         }

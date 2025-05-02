@@ -50,7 +50,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->singleton('fof.sentry.backend.config', function () {
             return [];
         });
-        
+
         $this->container->singleton('fof.sentry.frontend.config', function () {
             return [];
         });
@@ -71,14 +71,14 @@ class SentryServiceProvider extends AbstractServiceProvider
             $dsn = $settings->get('fof-sentry.dsn_backend');
             /** @var string $release */
             $release = $container->make('sentry.release');
-            
+
             // Use custom environment if set, otherwise use the setting or default
-            $environment = $container->bound('fof.sentry.environment') 
+            $environment = $container->bound('fof.sentry.environment')
                 ? $container->make('fof.sentry.environment')
-                : (empty($settings->get('fof-sentry.environment')) 
-                    ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) 
+                : (empty($settings->get('fof-sentry.environment'))
+                    ? str_replace(['https://', 'http://'], '', $url->to('forum')->base())
                     : $settings->get('fof-sentry.environment'));
-                    
+
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
             $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate');
 

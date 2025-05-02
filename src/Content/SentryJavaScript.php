@@ -52,14 +52,14 @@ class SentryJavaScript
 
         // Get release from container
         $release = $this->container->make('sentry.release');
-        
+
         // Get environment (custom or from settings)
-        $environment = $this->container->bound('fof.sentry.environment') 
+        $environment = $this->container->bound('fof.sentry.environment')
             ? $this->container->make('fof.sentry.environment')
-            : (empty($this->settings->get('fof-sentry.environment')) 
-                ? str_replace(['https://', 'http://'], '', $this->url->to('forum')->base()) 
+            : (empty($this->settings->get('fof-sentry.environment'))
+                ? str_replace(['https://', 'http://'], '', $this->url->to('forum')->base())
                 : $this->settings->get('fof-sentry.environment'));
-                
+
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
@@ -75,13 +75,13 @@ class SentryJavaScript
 
         // Base configuration
         $config = [
-            'dsn' => $dsn,
-            'environment' => $environment,
-            'release' => $release,
-            'scrubEmails' => $shouldScrubEmailsFromUserData,
-            'showFeedback' => $showFeedback,
-            'captureConsole' => $captureConsole,
-            'tracesSampleRate' => $tracesSampleRate,
+            'dsn'                      => $dsn,
+            'environment'              => $environment,
+            'release'                  => $release,
+            'scrubEmails'              => $shouldScrubEmailsFromUserData,
+            'showFeedback'             => $showFeedback,
+            'captureConsole'           => $captureConsole,
+            'tracesSampleRate'         => $tracesSampleRate,
             'replaysSessionSampleRate' => $replaysSessionSampleRate,
             'replaysOnErrorSampleRate' => $replaysErrorSampleRate,
         ];
