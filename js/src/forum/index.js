@@ -57,6 +57,10 @@ const createClient = (config) =>
     transport: makeFetchTransport,
     stackParser: defaultStackParser,
 
+    // Add environment and release from config
+    environment: config.environment,
+    release: config.release,
+
     beforeSend: (event) => {
       event.logger = 'javascript';
 
@@ -66,6 +70,12 @@ const createClient = (config) =>
 
       if (config.showFeedback && event.exception) {
         showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('name') });
+      }
+
+      // Apply tags if provided
+      if (config.tags) {
+        if (!event.tags) event.tags = {};
+        Object.assign(event.tags, config.tags);
       }
 
       return event;

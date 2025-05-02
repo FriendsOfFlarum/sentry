@@ -14,6 +14,7 @@ namespace FoF\Sentry\Content;
 use Flarum\Frontend\Document;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Illuminate\Contracts\Container\Container;
 
 class SentryJavaScript
 {
@@ -27,10 +28,16 @@ class SentryJavaScript
      */
     private $url;
 
-    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url)
+    /**
+     * @var Container
+     */
+    private $container;
+
+    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url, Container $container)
     {
         $this->settings = $settings;
         $this->url = $url;
+        $this->container = $container;
     }
 
     public function __invoke(Document $document)
@@ -42,7 +49,17 @@ class SentryJavaScript
         }
 
         $dsn = $this->settings->get('fof-sentry.dsn');
-        $environment = empty($this->settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $this->url->to('forum')->base()) : $this->settings->get('fof-sentry.environment');
+
+        // Get release from container
+        $release = $this->container->make('sentry.release');
+
+        // Get environment (custom or from settings)
+        $environment = $this->container->bound('fof.sentry.environment')
+            ? $this->container->make('fof.sentry.environment')
+            : (empty($this->settings->get('fof-sentry.environment'))
+                ? str_replace(['https://', 'http://'], '', $this->url->to('forum')->base())
+                : $this->settings->get('fof-sentry.environment'));
+
         $showFeedback = (bool) (int) $this->settings->get('fof-sentry.user_feedback');
         $captureConsole = (bool) (int) $this->settings->get('fof-sentry.javascript.console');
 
@@ -56,6 +73,27 @@ class SentryJavaScript
         $replaysSessionSampleRate = max(0, min(100, $replaysSessionSampleRate)) / 100;
         $replaysErrorSampleRate = max(0, min(100, $replaysErrorSampleRate)) / 100;
 
+        // Base configuration
+        $config = [
+            'dsn'                      => $dsn,
+            'environment'              => $environment,
+            'release'                  => $release,
+            'scrubEmails'              => $shouldScrubEmailsFromUserData,
+            'showFeedback'             => $showFeedback,
+            'captureConsole'           => $captureConsole,
+            'tracesSampleRate'         => $tracesSampleRate,
+            'replaysSessionSampleRate' => $replaysSessionSampleRate,
+            'replaysOnErrorSampleRate' => $replaysErrorSampleRate,
+        ];
+
+        // Merge with custom config
+        if ($this->container->bound('fof.sentry.frontend.config')) {
+            $customConfig = $this->container->make('fof.sentry.frontend.config');
+            $config = array_merge($config, $customConfig);
+        }
+
+        // Add the config to the document payload
+        $document->payload['fof-sentry'] = $config;
         $document->payload['fof-sentry.scrub-emails'] = (bool) $shouldScrubEmailsFromUserData;
 
         $document->foot[] = "
