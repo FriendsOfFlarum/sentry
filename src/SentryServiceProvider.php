@@ -46,6 +46,19 @@ class SentryServiceProvider extends AbstractServiceProvider
 
     public function register()
     {
+        // Register empty config containers that can be extended
+        $this->container->singleton('fof.sentry.backend.config', function () {
+            return [];
+        });
+        
+        $this->container->singleton('fof.sentry.frontend.config', function () {
+            return [];
+        });
+
+        $this->container->singleton('fof.sentry.measurements', function () {
+            return $this->measurements;
+        });
+
         $this->container->singleton('sentry.release', function () {
             return Application::VERSION;
         });
@@ -58,7 +71,14 @@ class SentryServiceProvider extends AbstractServiceProvider
             $dsn = $settings->get('fof-sentry.dsn_backend');
             /** @var string $release */
             $release = $container->make('sentry.release');
-            $environment = empty($settings->get('fof-sentry.environment')) ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) : $settings->get('fof-sentry.environment');
+            
+            // Use custom environment if set, otherwise use the setting or default
+            $environment = $container->bound('fof.sentry.environment') 
+                ? $container->make('fof.sentry.environment')
+                : (empty($settings->get('fof-sentry.environment')) 
+                    ? str_replace(['https://', 'http://'], '', $url->to('forum')->base()) 
+                    : $settings->get('fof-sentry.environment'));
+                    
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
             $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate');
 
@@ -72,14 +92,23 @@ class SentryServiceProvider extends AbstractServiceProvider
             $tracesSampleRate = round(max(0, min(100, $performanceMonitoring))) / 100;
             $profilesSampleRate = round(max(0, min(100, $profilesSampleRate))) / 100;
 
-            init([
+            // Base configuration
+            $config = [
                 'dsn'                   => $dsn,
                 'in_app_include'        => [$paths->base],
                 'traces_sample_rate'    => $tracesSampleRate,
                 'profiles_sample_rate'  => $profilesSampleRate,
                 'environment'           => $environment,
                 'release'               => $release,
-            ]);
+            ];
+
+            // Merge with custom config
+            if ($container->bound('fof.sentry.backend.config')) {
+                $customConfig = $container->make('fof.sentry.backend.config');
+                $config = array_merge($config, $customConfig);
+            }
+
+            init($config);
 
             return SentrySdk::getCurrentHub();
         });
@@ -173,7 +202,10 @@ class SentryServiceProvider extends AbstractServiceProvider
 
             $transaction = $hub->startTransaction(new TransactionContext('flarum'));
 
-            foreach ($this->measurements as $measurement) {
+            // Use the measurements from the container
+            $measurements = $this->container->make('fof.sentry.measurements');
+
+            foreach ($measurements as $measurement) {
                 /** @var Measure $measure */
                 $measure = new $measurement($transaction, $this->container);
                 if ($span = $measure->handle()) {
