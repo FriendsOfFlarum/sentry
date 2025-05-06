@@ -37,7 +37,7 @@ use FoF\Sentry\Extend\Sentry;
 
 return [
     // Other extenders
-    
+
     (new Sentry())
         ->setRelease('my-app-v1.2.3')
         ->setEnvironment('production')
@@ -71,26 +71,6 @@ Add a custom tag to all Sentry events (applied to both backend and frontend):
 (new Sentry())
     ->addTag('server_type', 'dedicated')
     ->addTag('php_version', PHP_VERSION);
-```
-
-##### `addBackendConfig(string $key, $value)`
-
-Add a custom configuration option for the PHP SDK:
-
-```php
-(new Sentry())
-    ->addBackendConfig('max_breadcrumbs', 50)
-    ->addBackendConfig('send_default_pii', true);
-```
-
-##### `addFrontendConfig(string $key, $value)`
-
-Add a custom configuration option for the JavaScript SDK:
-
-```php
-(new Sentry())
-    ->addFrontendConfig('maxBreadcrumbs', 50)
-    ->addFrontendConfig('debug', true);
 ```
 
 #### Example: Setting Environment Variables

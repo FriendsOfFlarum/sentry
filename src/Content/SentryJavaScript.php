@@ -11,6 +11,8 @@
 
 namespace FoF\Sentry\Content;
 
+use Flarum\Foundation\Application;
+use Flarum\Foundation\Config;
 use Flarum\Frontend\Document;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
@@ -33,11 +35,17 @@ class SentryJavaScript
      */
     private $container;
 
-    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url, Container $container)
+    /**
+     * @var Config
+     */
+    private $config;
+
+    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url, Container $container, Config $config)
     {
         $this->settings = $settings;
         $this->url = $url;
         $this->container = $container;
+        $this->config = $config;
     }
 
     public function __invoke(Document $document)
@@ -84,12 +92,18 @@ class SentryJavaScript
             'tracesSampleRate'         => $tracesSampleRate,
             'replaysSessionSampleRate' => $replaysSessionSampleRate,
             'replaysOnErrorSampleRate' => $replaysErrorSampleRate,
+            'tags'                     => [
+                'flarum'  => Application::VERSION,
+                'offline' => $this->config['offline'] ? 'true' : 'false',
+                'debug'   => $this->config->inDebugMode() ? 'true' : 'false',
+            ],
         ];
 
-        // Merge with custom config
-        if ($this->container->bound('fof.sentry.frontend.config')) {
-            $customConfig = $this->container->make('fof.sentry.frontend.config');
-            $config = array_merge($config, $customConfig);
+        // Retrieve custom tags if they exist
+        if ($this->container->bound('fof.sentry.tags')) {
+            $customTags = $this->container->make('fof.sentry.tags');
+            // Merge custom tags with the default ones
+            $config['tags'] = array_merge($config['tags'], $customTags);
         }
 
         // Add the config to the document payload
@@ -99,17 +113,18 @@ class SentryJavaScript
         $document->foot[] = "
                 <script>
                     if (window.Sentry) {
+                        const sentryConfig = app.data['fof-sentry'] || {};
                         const client = Sentry.createClient({
-                            dsn: '$dsn',
-                            environment: '$environment',
-                            scrubEmails: ".($shouldScrubEmailsFromUserData ? 'true' : 'false').',
-                            showFeedback: '.($showFeedback ? 'true' : 'false').',
-
-                            captureConsole: '.($captureConsole ? 'true' : 'false').",
-
-                            tracesSampleRate: $tracesSampleRate,
-                            replaysSessionSampleRate: $replaysSessionSampleRate,
-                            replaysOnErrorSampleRate: $replaysErrorSampleRate,
+                            dsn: sentryConfig.dsn || '$dsn',
+                            environment: sentryConfig.environment || '$environment',
+                            release: sentryConfig.release || '$release',
+                            scrubEmails: sentryConfig.scrubEmails !== undefined ? sentryConfig.scrubEmails : ".($shouldScrubEmailsFromUserData ? 'true' : 'false').',
+                            showFeedback: sentryConfig.showFeedback !== undefined ? sentryConfig.showFeedback : '.($showFeedback ? 'true' : 'false').',
+                            captureConsole: sentryConfig.captureConsole !== undefined ? sentryConfig.captureConsole : '.($captureConsole ? 'true' : 'false').",
+                            tracesSampleRate: sentryConfig.tracesSampleRate !== undefined ? sentryConfig.tracesSampleRate : $tracesSampleRate,
+                            replaysSessionSampleRate: sentryConfig.replaysSessionSampleRate !== undefined ? sentryConfig.replaysSessionSampleRate : $replaysSessionSampleRate,
+                            replaysOnErrorSampleRate: sentryConfig.replaysOnErrorSampleRate !== undefined ? sentryConfig.replaysOnErrorSampleRate : $replaysErrorSampleRate,
+                            tags: sentryConfig.tags || {}
                         });
 
                         Sentry.getCurrentHub().bindClient(client);
