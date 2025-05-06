@@ -73,26 +73,6 @@ Add a custom tag to all Sentry events (applied to both backend and frontend):
     ->addTag('php_version', PHP_VERSION);
 ```
 
-##### `addBackendConfig(string $key, $value)`
-
-Add a custom configuration option for the PHP SDK:
-
-```php
-(new Sentry())
-    ->addBackendConfig('max_breadcrumbs', 50)
-    ->addBackendConfig('send_default_pii', true);
-```
-
-##### `addFrontendConfig(string $key, $value)`
-
-Add a custom configuration option for the JavaScript SDK:
-
-```php
-(new Sentry())
-    ->addFrontendConfig('maxBreadcrumbs', 50)
-    ->addFrontendConfig('debug', true);
-```
-
 #### Example: Setting Environment Variables
 
 You can use environment variables to configure Sentry:

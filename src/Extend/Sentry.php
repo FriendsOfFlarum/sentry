@@ -21,8 +21,6 @@ class Sentry implements ExtenderInterface
 {
     private $customRelease = null;
     private $customEnvironment = null;
-    private $backendConfig = [];
-    private $frontendConfig = [];
     private $tags = [];
 
     /**
@@ -49,36 +47,6 @@ class Sentry implements ExtenderInterface
     public function setEnvironment(string $environment): self
     {
         $this->customEnvironment = $environment;
-
-        return $this;
-    }
-
-    /**
-     * Add a custom configuration option for the PHP SDK.
-     *
-     * @param string $key   Configuration key
-     * @param mixed  $value Configuration value
-     *
-     * @return self
-     */
-    public function addBackendConfig(string $key, $value): self
-    {
-        $this->backendConfig[$key] = $value;
-
-        return $this;
-    }
-
-    /**
-     * Add a custom configuration option for the JavaScript SDK.
-     *
-     * @param string $key   Configuration key
-     * @param mixed  $value Configuration value
-     *
-     * @return self
-     */
-    public function addFrontendConfig(string $key, $value): self
-    {
-        $this->frontendConfig[$key] = $value;
 
         return $this;
     }
@@ -114,22 +82,13 @@ class Sentry implements ExtenderInterface
             });
         }
 
-        // Add backend config options
-        if (!empty($this->backendConfig)) {
-            $container->extend('fof.sentry.backend.config', function ($config) {
-                return array_merge($config ?? [], $this->backendConfig);
-            });
-        }
-
-        // Add frontend config options
-        if (!empty($this->frontendConfig)) {
-            $container->extend('fof.sentry.frontend.config', function ($config) {
-                return array_merge($config ?? [], $this->frontendConfig);
-            });
-        }
-
         // Add tags to backend
         if (!empty($this->tags)) {
+            // Register tags in the container so they can be accessed by SentryJavaScript
+            $container->singleton('fof.sentry.tags', function () {
+                return $this->tags;
+            });
+            
             $container->extend(HubInterface::class, function (HubInterface $hub) {
                 $hub->configureScope(function (Scope $scope) {
                     foreach ($this->tags as $key => $value) {
