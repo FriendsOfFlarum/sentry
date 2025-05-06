@@ -93,10 +93,10 @@ class SentryJavaScript
             'replaysSessionSampleRate' => $replaysSessionSampleRate,
             'replaysOnErrorSampleRate' => $replaysErrorSampleRate,
             'tags'                     => [
-                'flarum' => Application::VERSION,
+                'flarum'  => Application::VERSION,
                 'offline' => $this->config['offline'] ? 'true' : 'false',
-                'debug' => $this->config->inDebugMode() ? 'true' : 'false',
-            ]
+                'debug'   => $this->config->inDebugMode() ? 'true' : 'false',
+            ],
         ];
 
         // Retrieve custom tags if they exist
@@ -118,9 +118,9 @@ class SentryJavaScript
                             dsn: sentryConfig.dsn || '$dsn',
                             environment: sentryConfig.environment || '$environment',
                             release: sentryConfig.release || '$release',
-                            scrubEmails: sentryConfig.scrubEmails !== undefined ? sentryConfig.scrubEmails : ".($shouldScrubEmailsFromUserData ? 'true' : 'false').",
-                            showFeedback: sentryConfig.showFeedback !== undefined ? sentryConfig.showFeedback : ".($showFeedback ? 'true' : 'false').",
-                            captureConsole: sentryConfig.captureConsole !== undefined ? sentryConfig.captureConsole : ".($captureConsole ? 'true' : 'false').",
+                            scrubEmails: sentryConfig.scrubEmails !== undefined ? sentryConfig.scrubEmails : ".($shouldScrubEmailsFromUserData ? 'true' : 'false').',
+                            showFeedback: sentryConfig.showFeedback !== undefined ? sentryConfig.showFeedback : '.($showFeedback ? 'true' : 'false').',
+                            captureConsole: sentryConfig.captureConsole !== undefined ? sentryConfig.captureConsole : '.($captureConsole ? 'true' : 'false').",
                             tracesSampleRate: sentryConfig.tracesSampleRate !== undefined ? sentryConfig.tracesSampleRate : $tracesSampleRate,
                             replaysSessionSampleRate: sentryConfig.replaysSessionSampleRate !== undefined ? sentryConfig.replaysSessionSampleRate : $replaysSessionSampleRate,
                             replaysOnErrorSampleRate: sentryConfig.replaysOnErrorSampleRate !== undefined ? sentryConfig.replaysOnErrorSampleRate : $replaysErrorSampleRate,

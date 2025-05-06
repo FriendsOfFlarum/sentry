@@ -88,7 +88,7 @@ class Sentry implements ExtenderInterface
             $container->singleton('fof.sentry.tags', function () {
                 return $this->tags;
             });
-            
+
             $container->extend(HubInterface::class, function (HubInterface $hub) {
                 $hub->configureScope(function (Scope $scope) {
                     foreach ($this->tags as $key => $value) {
