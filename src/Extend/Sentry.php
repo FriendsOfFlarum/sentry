@@ -94,7 +94,7 @@ class Sentry implements ExtenderInterface
         return $this;
     }
 
-    public function extend(Container $container, ?Extension $extension = null)
+    public function extend(Container $container, ?Extension $extension = null): void
     {
         // Override the release version if set
         if ($this->customRelease !== null) {
