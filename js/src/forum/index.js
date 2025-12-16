@@ -111,7 +111,8 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
 
       // Add user groups if available
       if (user.groups && user.groups()) {
-        const groups = user.groups()
+        const groups = user
+          .groups()
           .map((group) => group.nameSingular())
           .filter(Boolean)
           .join(', ');
