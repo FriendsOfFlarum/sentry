@@ -19,11 +19,12 @@ use Sentry\State\Scope;
 
 class Sentry implements ExtenderInterface
 {
-    private $customRelease = null;
-    private $customEnvironment = null;
-    private $tags = [];
-    private $sendTestMessage = false;
-    private $sendTestException = false;
+    private ?string $customRelease = null;
+    private ?string $customEnvironment = null;
+    /** @var array<string, string> */
+    private array $tags = [];
+    private bool $sendTestMessage = false;
+    private bool $sendTestException = false;
 
     /**
      * Set a custom release version.
@@ -94,7 +95,7 @@ class Sentry implements ExtenderInterface
         return $this;
     }
 
-    public function extend(Container $container, ?Extension $extension = null)
+    public function extend(Container $container, ?Extension $extension = null): void
     {
         // Override the release version if set
         if ($this->customRelease !== null) {

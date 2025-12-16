@@ -20,35 +20,11 @@ use Illuminate\Contracts\Container\Container;
 
 class SentryJavaScript
 {
-    /**
-     * @var SettingsRepositoryInterface
-     */
-    private $settings;
-
-    /**
-     * @var UrlGenerator
-     */
-    private $url;
-
-    /**
-     * @var Container
-     */
-    private $container;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    public function __construct(SettingsRepositoryInterface $settings, UrlGenerator $url, Container $container, Config $config)
+    public function __construct(private SettingsRepositoryInterface $settings, private UrlGenerator $url, private Container $container, private Config $config)
     {
-        $this->settings = $settings;
-        $this->url = $url;
-        $this->container = $container;
-        $this->config = $config;
     }
 
-    public function __invoke(Document $document)
+    public function __invoke(Document $document): void
     {
         $useJs = (bool) (int) $this->settings->get('fof-sentry.javascript');
 

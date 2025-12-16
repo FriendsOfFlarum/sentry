@@ -12,43 +12,17 @@
 namespace FoF\Sentry\Formatters;
 
 use Flarum\Foundation\ErrorHandling\HandledError;
-use Flarum\Foundation\ErrorHandling\HttpFormatter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Illuminate\Contracts\View\Factory as ViewFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
-class SentryFormatter implements HttpFormatter
+class SentryFormatter extends ViewFormatter
 {
-    /**
-     * @var ViewFormatter
-     */
-    private $formatter;
-
-    /**
-     * @var ViewFactory
-     */
-    protected $view;
-
-    /**
-     * @var TranslatorInterface
-     */
-    protected $translator;
-
-    public function __construct(ViewFormatter $formatter)
-    {
-        $this->formatter = $formatter;
-
-        $this->view = resolve(ViewFactory::class);
-        $this->translator = resolve(TranslatorInterface::class);
-    }
-
     public function format(HandledError $error, Request $request): Response
     {
-        $response = $this->formatter->format($error, $request);
+        $response = parent::format($error, $request);
 
         /** @var SettingsRepositoryInterface */
         $settings = resolve(SettingsRepositoryInterface::class);
