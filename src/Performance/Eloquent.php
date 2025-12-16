@@ -78,7 +78,7 @@ class Eloquent extends Measure
 
             // Base data
             $data = [
-                'connection' => $event->connectionName,
+                'connection'  => $event->connectionName,
                 'duration_ms' => $event->time,
             ];
 
@@ -149,7 +149,7 @@ class Eloquent extends Measure
     }
 
     /**
-     * Normalize query pattern by replacing values with placeholders for N+1 detection
+     * Normalize query pattern by replacing values with placeholders for N+1 detection.
      */
     protected function normalizeQueryPattern(string $sql): string
     {
@@ -166,7 +166,7 @@ class Eloquent extends Measure
     }
 
     /**
-     * Determine the type of SQL query
+     * Determine the type of SQL query.
      */
     protected function getQueryType(string $sql): string
     {
@@ -188,7 +188,7 @@ class Eloquent extends Measure
     }
 
     /**
-     * Extract table names from SQL query
+     * Extract table names from SQL query.
      */
     protected function extractTables(string $sql): array
     {
@@ -203,14 +203,14 @@ class Eloquent extends Measure
     }
 
     /**
-     * Sanitize query bindings to prevent sensitive data leakage
+     * Sanitize query bindings to prevent sensitive data leakage.
      */
     protected function sanitizeBindings(array $bindings): array
     {
         return array_map(function ($binding) {
             // Truncate long strings
             if (is_string($binding) && strlen($binding) > 100) {
-                return substr($binding, 0, 97) . '...';
+                return substr($binding, 0, 97).'...';
             }
 
             // Mask potential passwords/tokens
@@ -223,15 +223,15 @@ class Eloquent extends Measure
     }
 
     /**
-     * Get aggregation statistics and attach to transaction
+     * Get aggregation statistics and attach to transaction.
      */
     public function __destruct()
     {
         if (static::$queryCount > 0) {
             $aggregateData = [
-                'total_queries' => static::$queryCount,
+                'total_queries'       => static::$queryCount,
                 'total_query_time_ms' => round(static::$totalQueryTime, 2),
-                'avg_query_time_ms' => round(static::$totalQueryTime / static::$queryCount, 2),
+                'avg_query_time_ms'   => round(static::$totalQueryTime / static::$queryCount, 2),
             ];
 
             // Add N+1 summary

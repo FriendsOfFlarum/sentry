@@ -49,7 +49,7 @@ class HandleErrorsWithSentry implements MiddlewareInterface
     }
 
     /**
-     * Set user context for Sentry events
+     * Set user context for Sentry events.
      */
     protected function setUserContext(ServerRequestInterface $request): void
     {
