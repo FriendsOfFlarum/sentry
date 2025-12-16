@@ -30,6 +30,7 @@ return [
 
     (new Flarum\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js')
+        ->css(__DIR__.'/resources/less/admin.less')
         ->content(function (Document $document) {
             $document->payload['hasExcimer'] = extension_loaded('excimer');
         }),
@@ -62,6 +63,9 @@ return [
         }),
 
     (new Flarum\Settings())
+        ->default('fof-sentry.dsn', '')
+        ->default('fof-sentry.dsn_backend', '')
+        ->default('fof-sentry.environment', '')
         ->default('fof-sentry.monitor_performance', 0)
         ->default('fof-sentry.send_emails_with_sentry_reports', false)
         ->default('fof-sentry.user_feedback', false)
