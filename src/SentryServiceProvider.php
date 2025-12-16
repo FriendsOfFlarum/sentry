@@ -36,13 +36,15 @@ use function Sentry\init;
 
 class SentryServiceProvider extends AbstractServiceProvider
 {
-    protected $measurements = [
+    /** @var array<class-string> */
+    protected array $measurements = [
         Performance\Eloquent::class,
         Performance\Extension::class,
         Performance\Frontend::class,
     ];
 
-    protected static $transactionStack = [];
+    /** @var array<mixed> */
+    protected static array $transactionStack = [];
 
     public function register()
     {
@@ -150,12 +152,7 @@ class SentryServiceProvider extends AbstractServiceProvider
             return $hub;
         });
 
-        $this->container->extend(
-            ViewFormatter::class,
-            function (ViewFormatter $formatter) {
-                return new SentryFormatter($formatter);
-            }
-        );
+        $this->container->singleton(ViewFormatter::class, SentryFormatter::class);
 
         $this->container->tag(SentryReporter::class, Reporter::class);
 
@@ -198,7 +195,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         );
     }
 
-    public function boot(SettingsRepositoryInterface $settings)
+    public function boot(SettingsRepositoryInterface $settings): void
     {
         set_error_handler([$this, 'handleError']);
 
@@ -226,7 +223,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         }
     }
 
-    public function handleError($level, $message, $file = '', $line = 0)
+    public function handleError(int $level, string $message, string $file = '', int $line = 0): bool
     {
         // ignore STMT_PREPARE errors because Eloquent automatically tries reconnecting
         if (strpos($message, 'STMT_PREPARE packet') !== false) {
@@ -236,7 +233,7 @@ class SentryServiceProvider extends AbstractServiceProvider
         if (error_reporting() & $level) {
             $error = new ErrorException($message, 0, $level, $file, $line);
 
-            if (resolve('flarum')->inDebugMode()) {
+            if (resolve(Config::class)->inDebugMode()) {
                 throw $error;
             } else {
                 foreach ($this->container->tagged(Reporter::class) as $reporter) {
@@ -247,6 +244,8 @@ class SentryServiceProvider extends AbstractServiceProvider
                 }
             }
         }
+
+        return false;
     }
 
     public function __destruct()

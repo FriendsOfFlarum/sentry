@@ -36,7 +36,7 @@ class Extension extends Measure
         return null;
     }
 
-    public function measure($event)
+    public function measure(Event\Enabled|Event\Enabling|Event\Disabled|Event\Disabling $event): void
     {
         $span = $this->transaction->startChild(new SpanContext());
         $span->setOp('extension');

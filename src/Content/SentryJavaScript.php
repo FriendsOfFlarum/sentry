@@ -24,7 +24,7 @@ class SentryJavaScript
     {
     }
 
-    public function __invoke(Document $document)
+    public function __invoke(Document $document): void
     {
         $useJs = (bool) (int) $this->settings->get('fof-sentry.javascript');
 

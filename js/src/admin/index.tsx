@@ -1,6 +1,7 @@
 import app from 'flarum/admin/app';
-import SentrySettingsPage from './components/SentrySettingsPage';
+
+export { default as extend } from './extend';
 
 app.initializers.add('fof/sentry', () => {
-  app.registry.for('fof-sentry').registerPage(SentrySettingsPage);
+  //
 });
