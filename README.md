@@ -397,27 +397,6 @@ You can use environment variables to configure Sentry:
     ->addTag('server_id', env('SERVER_ID', 'unknown'));
 ```
 
-## Changelog
-
-### Recent Changes
-
-#### Database Query Monitoring
-- Added configurable slow query detection with severity levels
-- Implemented N+1 query detection with pattern matching
-- Added query sampling to reduce overhead on high-traffic sites
-- Optional query parameter binding tracking with automatic sanitization
-- Aggregate query statistics per request
-
-#### User Context Enhancements
-- Added user group membership to all Sentry reports
-- Consistent user context across error reports, performance traces, and feedback dialogs
-- Improved privacy controls for email addresses
-
-#### Security Improvements
-- Fixed XSS vulnerability in user feedback dialog
-- Updated frontend Sentry SDK from v8.38.0 to v10.0.0
-- Enhanced data sanitization for query bindings
-
 ### Links
 
 [![OpenCollective](https://img.shields.io/badge/donate-friendsofflarum-44AEE5?style=for-the-badge&logo=open-collective)](https://opencollective.com/fof/donate) [![GitHub](https://img.shields.io/badge/donate-datitisev-ea4aaa?style=for-the-badge&logo=github)](https://datitisev.me/donate/github)
