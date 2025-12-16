@@ -70,5 +70,11 @@ return [
         ->default('fof-sentry.javascript.replays_session_sample_rate', 0)
         ->default('fof-sentry.javascript.replays_error_sample_rate', 0)
         ->default('fof-sentry.profile_rate', 0)
-        ->default('fof-sentry.javascript', true),
+        ->default('fof-sentry.javascript', true)
+        // Database query performance monitoring settings
+        ->default('fof-sentry.db.slow_query_threshold', 1000)
+        ->default('fof-sentry.db.n_plus_one_detection', true)
+        ->default('fof-sentry.db.n_plus_one_threshold', 10)
+        ->default('fof-sentry.db.track_bindings', false)
+        ->default('fof-sentry.db.query_sample_rate', 100),
 ];

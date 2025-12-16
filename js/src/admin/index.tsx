@@ -87,5 +87,41 @@ app.initializers.add('fof/sentry', () => {
       type: 'number',
       min: 0,
       max: 100,
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.db_slow_query_threshold_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.db_slow_query_threshold_help'),
+      setting: 'fof-sentry.db.slow_query_threshold',
+      type: 'number',
+      min: 100,
+      max: 10000,
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.db_n_plus_one_detection_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.db_n_plus_one_detection_help'),
+      setting: 'fof-sentry.db.n_plus_one_detection',
+      type: 'boolean',
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.db_n_plus_one_threshold_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.db_n_plus_one_threshold_help'),
+      setting: 'fof-sentry.db.n_plus_one_threshold',
+      type: 'number',
+      min: 5,
+      max: 100,
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.db_track_bindings_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.db_track_bindings_help', { br: <br /> }),
+      setting: 'fof-sentry.db.track_bindings',
+      type: 'boolean',
+    })
+    .registerSetting({
+      label: app.translator.trans('fof-sentry.admin.settings.db_query_sample_rate_label'),
+      help: app.translator.trans('fof-sentry.admin.settings.db_query_sample_rate_help'),
+      setting: 'fof-sentry.db.query_sample_rate',
+      type: 'number',
+      min: 0,
+      max: 100,
     });
 });

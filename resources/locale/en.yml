@@ -25,3 +25,14 @@ fof-sentry:
       javascript_replays_session_sample_rate_help: The sample rate for replays that begin recording immediately and last the entirety of the user's session. {br}✱ Having any replay option enabled increases bundle size by ~150 KB.
       javascript_replays_error_sample_rate: Front-end Error Replays Rate (0 - 100)
       javascript_replays_error_sample_rate_help: The sample rate for replays that are recorded when an error happens. Up to 1 minute before the error will be recorded and continue until the session ends. {br}✱ Having any replay option enabled increases bundle size by ~150 KB.
+
+      db_slow_query_threshold_label: Slow Query Threshold (milliseconds)
+      db_slow_query_threshold_help: Database queries slower than this threshold will be flagged as slow queries. Default is 1000ms (1 second).
+      db_n_plus_one_detection_label: Enable N+1 Query Detection
+      db_n_plus_one_detection_help: Automatically detect potential N+1 query problems by tracking repeated query patterns.
+      db_n_plus_one_threshold_label: N+1 Detection Threshold
+      db_n_plus_one_threshold_help: Number of times a query pattern must repeat to be flagged as a potential N+1 issue. Default is 10.
+      db_track_bindings_label: Track Query Parameter Bindings
+      db_track_bindings_help: Include query parameter values in Sentry reports. {br}⚠️ Warning&#58; This may expose sensitive data. Passwords and hashes are automatically sanitized, but use with caution.
+      db_query_sample_rate_label: Query Sampling Rate (0 - 100)
+      db_query_sample_rate_help: Percentage of queries to track. Slow queries are always tracked. Set to 100 to track all queries, or lower to reduce overhead. Default is 100.

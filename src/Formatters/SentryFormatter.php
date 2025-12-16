@@ -62,26 +62,57 @@ class SentryFormatter implements HttpFormatter
         $user = RequestUtil::getActor(resolve('sentry.request'));
         $locale = $this->translator->getLocale();
         $eventId = $sentry->getLastEventId();
-        $userData = ($user != null && $user->id != 0) ?
-            "user: {
-                email: '$user->email',
-                name: '$user->username'
-            }" : '';
+
+        // Build user data with proper escaping to prevent XSS
+        $userData = '';
+        if ($user != null && $user->id != 0) {
+            $userDataArray = [
+                'name' => $user->username,
+            ];
+
+            // Only include email if setting is enabled
+            if ((bool) $settings->get('fof-sentry.send_emails_with_sentry_reports')) {
+                $userDataArray['email'] = $user->email;
+            }
+
+            // Add user groups
+            if (!$user->relationLoaded('groups')) {
+                $user->load('groups');
+            }
+            $groups = $user->groups->pluck('name_singular')->filter()->all();
+            if (!empty($groups)) {
+                $userDataArray['groups'] = implode(', ', $groups);
+            }
+
+            // JSON encode for safe JavaScript embedding
+            $userDataJson = json_encode($userDataArray, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+            $userData = "user: $userDataJson,";
+        }
+
+        // JSON encode all values for safe JavaScript embedding
+        $configJson = json_encode([
+            'dsn' => $dsn,
+            'lang' => $locale,
+            'eventId' => $eventId,
+        ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         $body = $response->getBody();
 
         $body->seek($body->getSize());
 
         $body->write("
-            <script src=\"https://browser.sentry-cdn.com/7.91.0/bundle.min.js\" integrity=\"sha384-2p7fXoWSRPG49ZgmmJlTEI/01BY1LgxCNFQFiWpImAERmS/bROOQm+cJMdq/kmWS\" crossorigin=\"anonymous\"></script>
+            <script src=\"https://browser.sentry-cdn.com/10.0.0/bundle.min.js\" crossorigin=\"anonymous\"></script>
 
             <script>
-                Sentry.init({ dsn: '$dsn' });
-                Sentry.showReportDialog({
-                    lang: '$locale',
-                    eventId: '$eventId',
-                    $userData
-                });
+                (function() {
+                    var config = $configJson;
+                    Sentry.init({ dsn: config.dsn });
+                    Sentry.showReportDialog({
+                        lang: config.lang,
+                        eventId: config.eventId,
+                        $userData
+                    });
+                })();
             </script>
         ");
 

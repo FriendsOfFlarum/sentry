@@ -38,8 +38,13 @@ class SentryReporter implements Reporter
 
     public function report(Throwable $error)
     {
+        // Check if Sentry is configured before trying to report
+        if (!$this->container->bound(HubInterface::class)) {
+            return;
+        }
+
         /** @var HubInterface $hub */
-        $hub = $this->container->make('sentry');
+        $hub = $this->container->make(HubInterface::class);
 
         if ($this->container->bound('sentry.request')) {
             $hub->configureScope(function (Scope $scope) {
@@ -52,6 +57,16 @@ class SentryReporter implements Reporter
                     // Only send email if enabled in settings
                     if ((bool) resolve('flarum.settings')->get('fof-sentry.send_emails_with_sentry_reports')) {
                         $data['email'] = $user->email;
+                    }
+
+                    // Add user groups (load the relationship if not already loaded)
+                    if (!$user->relationLoaded('groups')) {
+                        $user->load('groups');
+                    }
+
+                    $groups = $user->groups->pluck('name_singular')->filter()->all();
+                    if (!empty($groups)) {
+                        $data['groups'] = implode(', ', $groups);
                     }
 
                     $scope->setUser($data);

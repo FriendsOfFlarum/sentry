@@ -66,9 +66,22 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->singleton(HubInterface::class, function ($container) {
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
+
+            // Check for DSN - try backend-specific first, then fall back to general DSN
+            $dsn = $settings->get('fof-sentry.dsn_backend');
+            if (empty($dsn)) {
+                $dsn = $settings->get('fof-sentry.dsn');
+            }
+
+            // If no DSN is configured, don't initialize Sentry
+            if (empty($dsn)) {
+                // Return the current hub without initialization
+                // This will be a no-op hub that doesn't send events
+                return SentrySdk::getCurrentHub();
+            }
+
             /** @var UrlGenerator $url */
             $url = $container->make(UrlGenerator::class);
-            $dsn = $settings->get('fof-sentry.dsn_backend');
             /** @var string $release */
             $release = $container->make('sentry.release');
 
@@ -81,10 +94,6 @@ class SentryServiceProvider extends AbstractServiceProvider
 
             $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
             $profilesSampleRate = (int) $settings->get('fof-sentry.profile_rate');
-
-            if (empty($dsn)) {
-                $dsn = $settings->get('fof-sentry.dsn');
-            }
 
             /** @var Paths $paths */
             $paths = $container->make(Paths::class);

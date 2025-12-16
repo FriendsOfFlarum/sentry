@@ -15,7 +15,6 @@ use Flarum\Extension\Event;
 use Illuminate\Contracts\Events\Dispatcher;
 use Sentry\Tracing\Span;
 use Sentry\Tracing\SpanContext;
-use Sentry\Tracing\TransactionContext;
 
 class Extension extends Measure
 {
@@ -43,9 +42,9 @@ class Extension extends Measure
         $span->setOp('extension');
 
         if ($event instanceof Event\Enabling || $event instanceof Event\Disabling) {
-            static::$measure = $span->startChild(new TransactionContext(
-                $event instanceof Event\Enabling ? 'extension.enabling' : 'extension.disabling'
-            ));
+            $spanContext = new SpanContext();
+            $spanContext->setOp($event instanceof Event\Enabling ? 'extension.enabling' : 'extension.disabling');
+            static::$measure = $span->startChild($spanContext);
 
             static::$measure->setDescription($event->extension->name);
         } elseif (static::$measure !== null) {
