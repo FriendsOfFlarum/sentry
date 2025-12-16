@@ -3,31 +3,31 @@ import app from 'flarum/forum/app';
 import {
   BrowserClient,
   defaultStackParser,
-  getCurrentHub,
+  getClient,
+  setUser,
   makeFetchTransport,
   showReportDialog,
-  Breadcrumbs,
-  GlobalHandlers,
-  InboundFilters,
-  FunctionToString,
-  LinkedErrors,
-  HttpContext,
-  TryCatch,
-  BrowserTracing,
-  Replay,
+  breadcrumbsIntegration,
+  globalHandlersIntegration,
+  inboundFiltersIntegration,
+  functionToStringIntegration,
+  linkedErrorsIntegration,
+  httpContextIntegration,
+  dedupeIntegration,
+  browserTracingIntegration,
+  replayIntegration,
+  captureConsoleIntegration,
 } from '@sentry/browser';
 
-import { CaptureConsole } from '@sentry/integrations';
-
 const integrations = [
-  new InboundFilters(),
-  new FunctionToString(),
-  new TryCatch(),
-  new GlobalHandlers({
+  inboundFiltersIntegration(),
+  functionToStringIntegration(),
+  dedupeIntegration(),
+  globalHandlersIntegration({
     onerror: true,
     onunhandledrejection: true,
   }),
-  new Breadcrumbs({
+  breadcrumbsIntegration({
     console: true,
     dom: true,
     fetch: true,
@@ -35,19 +35,19 @@ const integrations = [
     sentry: true,
     xhr: true,
   }),
-  new LinkedErrors({
+  linkedErrorsIntegration({
     key: 'cause',
     limit: 5,
   }),
-  new HttpContext(),
+  httpContextIntegration(),
 ];
 
 if (__SENTRY_TRACING__) {
-  integrations.push(new BrowserTracing());
+  integrations.push(browserTracingIntegration());
 }
 
 if (__SENTRY_SESSION_REPLAY__) {
-  integrations.push(new Replay());
+  integrations.push(replayIntegration());
 }
 
 const createClient = (config) =>
@@ -69,7 +69,7 @@ const createClient = (config) =>
       }
 
       if (config.showFeedback && event.exception) {
-        showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('name') });
+        showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('username') });
       }
 
       // Apply tags if provided
@@ -85,10 +85,10 @@ const createClient = (config) =>
     replaysSessionSampleRate: config.replaysSessionSampleRate,
     replaysOnErrorSampleRate: config.replaysOnErrorSampleRate,
 
-    integrations: [...integrations, config.captureConsole && new CaptureConsole()].filter(Boolean),
+    integrations: [...integrations, config.captureConsole && captureConsoleIntegration()].filter(Boolean),
   });
 
-window.Sentry = { createClient, getCurrentHub, showReportDialog };
+window.Sentry = { createClient, getClient, setUser, showReportDialog };
 
 window.Sentry.getUserData = (nameAttr = 'username') => {
   /** @type {Sentry.User} */
@@ -108,6 +108,19 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
       if (!app.data['fof-sentry.scrub-emails']) {
         userData.email = user.email();
       }
+
+      // Add user groups if available
+      if (user.groups && user.groups()) {
+        const groups = user
+          .groups()
+          .map((group) => group.nameSingular())
+          .filter(Boolean)
+          .join(', ');
+
+        if (groups) {
+          userData.groups = groups;
+        }
+      }
     } else if (app.data.session && app.data.session.userId != 0) {
       userData = {
         id: app.data.session.userId,
@@ -119,5 +132,5 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
 };
 
 app.initializers.add('fof/sentry', () => {
-  getCurrentHub().setUser(Sentry.getUserData());
+  setUser(Sentry.getUserData());
 });

@@ -22,6 +22,8 @@ class Sentry implements ExtenderInterface
     private $customRelease = null;
     private $customEnvironment = null;
     private $tags = [];
+    private $sendTestMessage = false;
+    private $sendTestException = false;
 
     /**
      * Set a custom release version.
@@ -62,6 +64,32 @@ class Sentry implements ExtenderInterface
     public function addTag(string $key, string $value): self
     {
         $this->tags[$key] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Send a test message to Sentry to verify the integration is working.
+     * This will send a message event on the next request.
+     *
+     * @return self
+     */
+    public function sendTestMessage(): self
+    {
+        $this->sendTestMessage = true;
+
+        return $this;
+    }
+
+    /**
+     * Send a test exception to Sentry to verify the integration is working.
+     * This will send an exception event on the next request.
+     *
+     * @return self
+     */
+    public function sendTestException(): self
+    {
+        $this->sendTestException = true;
 
         return $this;
     }
@@ -107,6 +135,20 @@ class Sentry implements ExtenderInterface
                 $config['tags'] = array_merge($config['tags'] ?? [], $this->tags);
 
                 return $config;
+            });
+        }
+
+        // Send test message if requested
+        if ($this->sendTestMessage) {
+            $container->resolving(HubInterface::class, function () {
+                \Sentry\captureMessage('FoF Sentry test message - integration is working!');
+            });
+        }
+
+        // Send test exception if requested
+        if ($this->sendTestException) {
+            $container->resolving(HubInterface::class, function (HubInterface $hub) {
+                $hub->captureException(new \Exception('FoF Sentry test exception - integration is working!'));
             });
         }
     }

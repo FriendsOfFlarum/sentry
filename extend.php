@@ -30,6 +30,7 @@ return [
 
     (new Flarum\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js')
+        ->css(__DIR__.'/resources/less/admin.less')
         ->content(function (Document $document) {
             $document->payload['hasExcimer'] = extension_loaded('excimer');
         }),
@@ -62,6 +63,9 @@ return [
         }),
 
     (new Flarum\Settings())
+        ->default('fof-sentry.dsn', '')
+        ->default('fof-sentry.dsn_backend', '')
+        ->default('fof-sentry.environment', '')
         ->default('fof-sentry.monitor_performance', 0)
         ->default('fof-sentry.send_emails_with_sentry_reports', false)
         ->default('fof-sentry.user_feedback', false)
@@ -70,5 +74,11 @@ return [
         ->default('fof-sentry.javascript.replays_session_sample_rate', 0)
         ->default('fof-sentry.javascript.replays_error_sample_rate', 0)
         ->default('fof-sentry.profile_rate', 0)
-        ->default('fof-sentry.javascript', true),
+        ->default('fof-sentry.javascript', true)
+        // Database query performance monitoring settings
+        ->default('fof-sentry.db.slow_query_threshold', 1000)
+        ->default('fof-sentry.db.n_plus_one_detection', true)
+        ->default('fof-sentry.db.n_plus_one_threshold', 10)
+        ->default('fof-sentry.db.track_bindings', false)
+        ->default('fof-sentry.db.query_sample_rate', 100),
 ];

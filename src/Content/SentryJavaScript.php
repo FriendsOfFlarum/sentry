@@ -127,7 +127,7 @@ class SentryJavaScript
                             tags: sentryConfig.tags || {}
                         });
 
-                        Sentry.getCurrentHub().bindClient(client);
+                        client.init();
                     } else {
                         console.error('Unable to initialize Sentry');
                     }
