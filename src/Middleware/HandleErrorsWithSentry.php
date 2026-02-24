@@ -56,8 +56,15 @@ class HandleErrorsWithSentry implements MiddlewareInterface
         $hub->configureScope(function (Scope $scope) use ($request, $settings) {
             $user = RequestUtil::getActor($request);
 
+            $data = [];
+
+            $ipAddress = $request->getAttribute('ipAddress');
+            if ($ipAddress) {
+                $data['ip_address'] = $ipAddress;
+            }
+
             if (!$user->isGuest() && $user->id !== 0) {
-                $data = $user->only('id', 'username');
+                $data += $user->only('id', 'username');
 
                 // Only send email if enabled in settings
                 if ((bool) $settings->get('fof-sentry.send_emails_with_sentry_reports')) {
@@ -74,7 +81,9 @@ class HandleErrorsWithSentry implements MiddlewareInterface
                 if (!empty($groups)) {
                     $data['groups'] = implode(', ', $groups);
                 }
+            }
 
+            if (!empty($data)) {
                 $scope->setUser($data);
             }
         });
