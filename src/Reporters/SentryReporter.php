@@ -48,7 +48,12 @@ class SentryReporter implements Reporter
                 }
 
                 if (!$user->isGuest() && $user->id !== 0) {
-                    $data += $user->only('id', 'username');
+                    $data['id'] = $user->id;
+                    $data['username'] = $user->display_name;
+
+                    if ($user->display_name !== $user->username) {
+                        $data['username_slug'] = $user->username;
+                    }
 
                     // Only send email if enabled in settings
                     if ((bool) resolve('flarum.settings')->get('fof-sentry.send_emails_with_sentry_reports')) {
