@@ -102,8 +102,12 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
       userData = {
         ip_address: '{{auto}}',
         id: user.id(),
-        [nameAttr]: user.username(),
+        [nameAttr]: user.displayName(),
       };
+
+      if (user.displayName() !== user.username()) {
+        userData.username_slug = user.username();
+      }
 
       if (!app.data['fof-sentry.scrub-emails']) {
         userData.email = user.email();
