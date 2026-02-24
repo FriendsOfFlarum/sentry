@@ -40,8 +40,20 @@ class SentryReporter implements Reporter
                 $request = $this->container->make('sentry.request');
                 $user = RequestUtil::getActor($request);
 
+                $data = [];
+
+                $ipAddress = $request->getAttribute('ipAddress');
+                if ($ipAddress) {
+                    $data['ip_address'] = $ipAddress;
+                }
+
                 if (!$user->isGuest() && $user->id !== 0) {
-                    $data = $user->only('id', 'username');
+                    $data['id'] = $user->id;
+                    $data['username'] = $user->display_name;
+
+                    if ($user->display_name !== $user->username) {
+                        $data['username_slug'] = $user->username;
+                    }
 
                     // Only send email if enabled in settings
                     if ((bool) resolve('flarum.settings')->get('fof-sentry.send_emails_with_sentry_reports')) {
@@ -57,7 +69,9 @@ class SentryReporter implements Reporter
                     if (!empty($groups)) {
                         $data['groups'] = implode(', ', $groups);
                     }
+                }
 
+                if (!empty($data)) {
                     $scope->setUser($data);
                 }
             });
