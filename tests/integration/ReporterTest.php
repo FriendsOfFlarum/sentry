@@ -58,7 +58,7 @@ class ReporterTest extends TestCase
     {
         $hub = $this->app()->getContainer()->make(HubInterface::class);
 
-        $transport = new class implements TransportInterface {
+        $transport = new class() implements TransportInterface {
             public function send(Event $event): Result
             {
                 ReporterTest::record($event);
