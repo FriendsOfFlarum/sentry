@@ -24,4 +24,12 @@ describe('forum boot', () => {
     // The bootstrap logs in user 1, "Admin".
     expect(getIsolationScope().getUser()).toMatchObject({ id: '1', username: 'Admin' });
   });
+
+  it('loads neither optional integration while their rates are 0', async () => {
+    // Give any (wrongly started) dynamic import the time it would need to resolve.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(getClient()?.getIntegrationByName('BrowserTracing')).toBeUndefined();
+    expect(getClient()?.getIntegrationByName('Replay')).toBeUndefined();
+  });
 });

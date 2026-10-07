@@ -37,6 +37,10 @@ app.initializers.add(
       if ((config.tracesSampleRate ?? 0) > 0) {
         import('./integrations/tracing').then(({ default: tracing }) => client.addIntegration(tracing()));
       }
+
+      if ((config.replaysSessionSampleRate ?? 0) > 0 || (config.replaysOnErrorSampleRate ?? 0) > 0) {
+        import('./integrations/replay').then(({ default: replay }) => client.addIntegration(replay()));
+      }
     });
   },
   // Ahead of other extensions' initializers, so errors thrown in them are captured.
