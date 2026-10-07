@@ -151,7 +151,7 @@ Capture console messages (log, info, warn, error) as breadcrumbs in error report
 
 Percentage of frontend page loads to trace for performance monitoring.
 
-**⚠️ Note**: Enabling this increases bundle size by ~30 KB.
+**Note**: Tracing is a separate download (~21 KB gzipped), fetched only while this rate is above 0 and after the page has loaded.
 
 #### Front-end Session Replays Rate
 **Setting**: `fof-sentry.javascript.replays_session_sample_rate`
@@ -160,7 +160,7 @@ Percentage of frontend page loads to trace for performance monitoring.
 
 Percentage of user sessions to record from the beginning. Session replays capture user interactions, allowing you to see exactly what the user did before encountering an error.
 
-**⚠️ Note**: Enabling any replay feature increases bundle size by ~150 KB.
+**Note**: Replay is a separate download (~44 KB gzipped), fetched only while either replay rate is above 0 and after the page has loaded.
 
 #### Front-end Error Replays Rate
 **Setting**: `fof-sentry.javascript.replays_error_sample_rate`
@@ -169,7 +169,7 @@ Percentage of user sessions to record from the beginning. Session replays captur
 
 Percentage of sessions to record only when an error occurs. Captures up to 1 minute before the error and continues until the session ends.
 
-**⚠️ Note**: Enabling any replay feature increases bundle size by ~150 KB.
+**Note**: Replay is a separate download (~44 KB gzipped), fetched only while either replay rate is above 0 and after the page has loaded.
 
 ### Database Query Performance Monitoring
 
