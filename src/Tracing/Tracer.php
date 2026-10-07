@@ -17,8 +17,10 @@ use FoF\Sentry\SentryServiceProvider;
 use Illuminate\Contracts\Container\Container;
 use Sentry\State\HubInterface;
 use Sentry\Tracing\Span;
+use Sentry\Tracing\SpanStatus;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionContext;
+use Sentry\Tracing\TransactionSource;
 
 class Tracer
 {
@@ -71,6 +73,37 @@ class Tracer
 
             $transaction->finish($end);
         });
+    }
+
+    /**
+     * Starts a transaction for one queued job and remembers the span it displaces.
+     *
+     * @return array{0: Transaction, 1: Span|null}
+     */
+    public function startJob(string $name): array
+    {
+        $previous = $this->container->make(HubInterface::class)->getSpan();
+
+        $context = new TransactionContext($name);
+        $context->setOp('queue.process');
+        $context->setSource(TransactionSource::task());
+
+        return [$this->start($context), $previous];
+    }
+
+    /**
+     * Workers have no response to wait for, so a job's transaction is sent straight away.
+     *
+     * @param array{0: Transaction, 1: Span|null} $job
+     */
+    public function finishJob(array $job, SpanStatus $status): void
+    {
+        [$transaction, $previous] = $job;
+
+        $transaction->setStatus($status);
+        $transaction->finish();
+
+        $this->container->make(HubInterface::class)->setSpan($previous);
     }
 
     protected function startMeasures(Transaction $transaction): void
