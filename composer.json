@@ -20,8 +20,10 @@
     ],
     "require": {
         "flarum/core": "^2.0.0",
-        "sentry/sdk": "^4.0",
-        "ext-curl": "*"
+        "sentry/sentry": "^4.33"
+    },
+    "suggest": {
+        "ext-excimer": "Required for backend profiling (the profiling sample rate setting)."
     },
     "authors": [
         {
@@ -55,18 +57,13 @@
             }
         },
         "branch-alias": {
-            "2.x": "2.x-dev"
+            "dev-2.x": "2.x-dev"
         },
         "flarum-cli": {
             "modules": {
                 "githubActions": true,
                 "backendTesting": true
             }
-        }
-    },
-    "config": {
-        "allow-plugins": {
-            "php-http/discovery": true
         }
     },
     "scripts": {
