@@ -11,8 +11,10 @@
 
 namespace FoF\Sentry\Tests\integration;
 
+use Flarum\Extend;
 use Flarum\Testing\integration\TestCase;
 use FoF\Sentry\Tests\fixtures\RecordingTransport;
+use FoF\Sentry\Tests\fixtures\ThrowingRequestHandler;
 use FoF\Sentry\Tracing\AfterResponse;
 use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\Attributes\Test;
@@ -117,5 +119,18 @@ class RequestTracingTest extends TestCase
 
         // `/` is served by Flarum's configurable default route, which is named "default".
         $this->assertSame('GET forum.default', RecordingTransport::transactions()[0]->getTransaction());
+    }
+
+    #[Test]
+    public function errors_during_a_request_belong_to_its_transaction(): void
+    {
+        $this->extend((new Extend\Routes('api'))->get('/sentry-test/fail', 'sentry-test.fail', ThrowingRequestHandler::class));
+
+        $this->sendTraced($this->request('GET', '/api/sentry-test/fail'));
+
+        $this->assertSame(
+            RecordingTransport::transactions()[0]->getContexts()['trace']['trace_id'],
+            RecordingTransport::errors()[0]->getContexts()['trace']['trace_id'] ?? null
+        );
     }
 }

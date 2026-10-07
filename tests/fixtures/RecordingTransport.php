@@ -44,4 +44,12 @@ class RecordingTransport implements TransportInterface
     {
         return array_values(array_filter(self::$events, fn (Event $event) => $event->getType() === EventType::transaction()));
     }
+
+    /**
+     * @return array<int, Event>
+     */
+    public static function errors(): array
+    {
+        return array_values(array_filter(self::$events, fn (Event $event) => $event->getType() === EventType::event()));
+    }
 }
