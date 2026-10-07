@@ -129,9 +129,11 @@ class SentryServiceProvider extends AbstractServiceProvider
                 $scope->setTag('debug', $this->booleanToString($flarumConfig->inDebugMode()));
                 $scope->setTag('flarum', Application::VERSION);
 
-                if ($container->bound('sentry.stack')) {
-                    $scope->setTag('stack', $container->make('sentry.stack'));
-                }
+                // Where the code runs: console commands, the scheduler and queue workers use the CLI SAPI.
+                // Web requests confirm "http" themselves (TraceRequest). A `sentry.stack` binding overrides both.
+                $scope->setTag('stack', $container->bound('sentry.stack')
+                    ? $container->make('sentry.stack')
+                    : (PHP_SAPI === 'cli' ? 'cli' : 'http'));
 
                 $scope->addEventProcessor(fn (Event $event) => static::attachUser($event, $container));
             });
