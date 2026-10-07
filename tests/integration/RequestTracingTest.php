@@ -88,4 +88,16 @@ class RequestTracingTest extends TestCase
 
         $this->assertEqualsWithDelta($receivedAt, RecordingTransport::transactions()[0]->getStartTimestamp(), 0.001);
     }
+
+    #[Test]
+    public function internal_api_calls_do_not_start_their_own_transactions(): void
+    {
+        // Rendering the forum preloads its data through the internal API client.
+        $this->sendTraced($this->request('GET', '/'));
+
+        $transactions = RecordingTransport::transactions();
+
+        $this->assertCount(1, $transactions);
+        $this->assertSame('forum', $transactions[0]->getTags()['frontend'] ?? null);
+    }
 }
