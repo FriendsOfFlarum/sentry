@@ -10,7 +10,7 @@ import {
   showReportDialog,
   breadcrumbsIntegration,
   globalHandlersIntegration,
-  inboundFiltersIntegration,
+  eventFiltersIntegration,
   functionToStringIntegration,
   linkedErrorsIntegration,
   httpContextIntegration,
@@ -21,7 +21,7 @@ import {
 } from '@sentry/browser';
 
 const integrations = [
-  inboundFiltersIntegration(),
+  eventFiltersIntegration(),
   functionToStringIntegration(),
   dedupeIntegration(),
   globalHandlersIntegration({

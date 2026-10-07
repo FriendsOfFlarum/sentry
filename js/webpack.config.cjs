@@ -1,39 +1,25 @@
 const webpack = require('webpack');
-const { merge } = require('webpack-merge');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const flarumConfig = require('flarum-webpack-config');
 
-const config = merge(
-  require('flarum-webpack-config')(),
-  {
-    plugins: [
-      new webpack.DefinePlugin({
-        __SENTRY_DEBUG__: false,
-      }),
-    ],
-  }
-);
+const buildDist = (filename, env, define = {}, buildAdmin = false, clean = false) => {
+  const config = flarumConfig();
 
-const buildDist = (filename, env, define = {}, buildAdmin = false, clean = false) => merge(
-  config,
-  {
-    entry: () => {
-      const entries = {
-        forum: config.entry.forum,
-      };
-
-      // No need to build admin JS multiple times
-      if (buildAdmin) {
-        entries.admin = config.entry.admin;
-      }
-
-      return entries;
-    },
+  return {
+    ...config,
+    // No need to build admin JS multiple times
+    entry: buildAdmin ? config.entry : { forum: config.entry.forum },
     output: {
+      ...config.output,
       filename,
       clean,
     },
+    // flarum-webpack-config returns the same module-level plugins array on every call, so copy it.
+    // Its own ANALYZER=true adds one analyzer shared by every variant; --env analyze gives one per variant.
     plugins: [
+      ...config.plugins,
       new webpack.DefinePlugin({
+        __SENTRY_DEBUG__: false,
         __SENTRY_SESSION_REPLAY__: false,
         __SENTRY_TRACING__: false,
         ...define,
@@ -42,24 +28,24 @@ const buildDist = (filename, env, define = {}, buildAdmin = false, clean = false
         analyzerPort: 'auto',
       }),
     ].filter(Boolean),
-  }
-);
+  };
+};
 
 module.exports = env => {
   const plain = buildDist('[name].js', env, {}, true, true);
 
   const tracing = buildDist('[name].tracing.js', env, {
     __SENTRY_TRACING__: true,
-  }, false, false);
+  });
 
   const replay = buildDist('[name].replay.js', env, {
     __SENTRY_SESSION_REPLAY__: true,
-  }, false, false);
+  });
 
   const tracingAndReplay = buildDist('[name].tracing.replay.js', env, {
     __SENTRY_TRACING__: true,
     __SENTRY_SESSION_REPLAY__: true,
-  }, false, false);
+  });
 
   return [plain, tracing, replay, tracingAndReplay];
 };
