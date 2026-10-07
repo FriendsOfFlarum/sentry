@@ -85,8 +85,6 @@ class BindingsTest extends TestCase
         $measurements = $this->container()->make('fof.sentry.measurements');
 
         $this->assertContains(\FoF\Sentry\Performance\Eloquent::class, $measurements);
-        $this->assertContains(\FoF\Sentry\Performance\Extension::class, $measurements);
-        $this->assertContains(\FoF\Sentry\Performance\Frontend::class, $measurements);
     }
 
     #[Test]

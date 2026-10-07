@@ -43,8 +43,6 @@ class SentryServiceProvider extends AbstractServiceProvider
     /** @var array<class-string> */
     protected array $measurements = [
         Performance\Eloquent::class,
-        Performance\Extension::class,
-        Performance\Frontend::class,
     ];
 
     public function register()
