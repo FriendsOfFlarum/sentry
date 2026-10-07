@@ -149,4 +149,16 @@ class RequestTracingTest extends TestCase
         $this->assertSame('771a43a4192642f0b136d5159a501700', $trace['trace_id']);
         $this->assertSame('ca3e1e1eb5c4b1b8', $trace['parent_span_id'] ?? null);
     }
+
+    #[Test]
+    public function the_forum_page_hands_its_trace_to_the_browser(): void
+    {
+        // The browser SDK reads these meta tags, so its pageload joins the server-side trace.
+        $html = (string) $this->sendTraced($this->request('GET', '/'))->getBody();
+
+        $traceId = RecordingTransport::transactions()[0]->getContexts()['trace']['trace_id'];
+
+        $this->assertMatchesRegularExpression('/<meta name="sentry-trace" content="'.$traceId.'-[0-9a-f]{16}-1">/', $html);
+        $this->assertMatchesRegularExpression('/<meta name="baggage" content="[^"]*sentry-trace_id='.$traceId.'[^"]*">/', $html);
+    }
 }
