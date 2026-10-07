@@ -64,7 +64,8 @@ class StackTraceTest extends TestCase
     #[Test]
     public function file_names_are_relative_to_the_install(): void
     {
-        $base = $this->app()->getContainer()->make(Paths::class)->base;
+        // Real frames carry absolute paths, while the test install's base path can be relative (as in CI).
+        $base = realpath($this->app()->getContainer()->make(Paths::class)->base);
 
         $this->assertSame('/extend.php', $this->frame($base.'/extend.php')->getFile());
     }
