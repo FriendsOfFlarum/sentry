@@ -104,11 +104,13 @@ Percentage of backend requests to trace for performance monitoring. Set to:
 - `100` to trace all requests
 - Lower values (e.g., `10`) to sample 10% of requests
 
-Performance monitoring tracks:
-- Request/response times
-- Database queries (when enabled)
-- Extension loading times
-- Custom spans
+Performance monitoring traces:
+- **Each request** as its own transaction, named after the matched route (e.g. `GET api.discussions.show`) and covering Flarum's bootstrap as well as the response
+- **Each queued job** as its own transaction; a job run synchronously during a request appears as a span of that request
+- **Database queries** as `db.sql.query` spans, which Sentry's Queries view and N+1 detection pick up (see [Database Query Performance Monitoring](#database-query-performance-monitoring))
+- **Errors** in a traced request, linked to its transaction
+
+When frontend performance monitoring is also on, a page load and the request that rendered it share one trace, and the browser's API calls continue that trace on the server.
 
 #### Back-end Profiling Rate
 **Setting**: `fof-sentry.profile_rate`

@@ -14,6 +14,7 @@ namespace FoF\Sentry;
 use Flarum\Extend as Flarum;
 use Flarum\Frontend\Document;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
+use FoF\Sentry\Middleware\NameTransaction;
 
 return [
     (new Flarum\ServiceProvider())
@@ -33,13 +34,19 @@ return [
     new Flarum\Locales(__DIR__.'/resources/locale'),
 
     (new Flarum\Middleware('forum'))
-        ->add(HandleErrorsWithSentry::class),
+        ->add(HandleErrorsWithSentry::class)
+        ->add(NameTransaction::class),
 
     (new Flarum\Middleware('admin'))
-        ->add(HandleErrorsWithSentry::class),
+        ->add(HandleErrorsWithSentry::class)
+        ->add(NameTransaction::class),
 
     (new Flarum\Middleware('api'))
-        ->add(HandleErrorsWithSentry::class),
+        ->add(HandleErrorsWithSentry::class)
+        ->add(NameTransaction::class),
+
+    (new Flarum\Event())
+        ->subscribe(Tracing\TraceQueueJobs::class),
 
     // These settings decide whether, and which variant of, the Sentry bundle is compiled into forum.js.
     (new Flarum\Settings())

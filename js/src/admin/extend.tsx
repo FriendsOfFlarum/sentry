@@ -135,9 +135,14 @@ export default [
         type: SAMPLE_RATE_FIELD,
         label: app.translator.trans('fof-sentry.admin.settings.profile_rate_label'),
         help: app.translator.trans('fof-sentry.admin.settings.profile_rate_help', {
-          bold: hasExcimer ? null : <b />,
+          // Rich parameters must never be null: the translator reads `.attrs` from any object value.
+          bold: ({ children }: { children: Mithril.Children }) => (hasExcimer ? children : <b>{children}</b>),
           icon: hasExcimer ? '✔' : '✖',
-          a: <a href="https://docs.sentry.io/platforms/php/profiling/#improve-response-time" target="_blank" />,
+          a: ({ children }: { children: Mithril.Children }) => (
+            <a href="https://docs.sentry.io/platforms/php/profiling/#improve-response-time" target="_blank">
+              {children}
+            </a>
+          ),
         }),
         min: 0,
         max: 100,

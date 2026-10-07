@@ -14,32 +14,38 @@ namespace FoF\Sentry\Performance;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Events\QueryExecuted;
+use Sentry\State\HubInterface;
 use Sentry\Tracing\Span;
 use Sentry\Tracing\SpanContext;
+use Sentry\Tracing\Transaction;
+use WeakMap;
 
 class Eloquent extends Measure
 {
-    /** @var array Track query patterns for N+1 detection */
-    protected static $queryPatterns = [];
+    /** A pattern repeated more than this many times counts towards `duplicate_query_patterns`. */
+    protected const DUPLICATE_PATTERN_MIN = 5;
 
-    /** @var int Track total query count */
-    protected static $queryCount = 0;
-
-    /** @var float Track total query time in milliseconds */
-    protected static $totalQueryTime = 0;
+    /**
+     * Per-transaction query statistics, so each request or job is measured on its own.
+     *
+     * @var WeakMap<Transaction, array{count: int, time: float, patterns: array<string, int>, duplicates: int, top: int}>
+     */
+    protected WeakMap $stats;
 
     /** @var SettingsRepositoryInterface */
     protected $settings;
 
     public function handle(): ?Span
     {
+        $this->stats = new WeakMap();
+
         /** @var Dispatcher $events */
         $events = $this->container->make(Dispatcher::class);
 
         $this->settings = $this->container->make(SettingsRepositoryInterface::class);
 
-        $span = $this->transaction->startChild(new SpanContext());
-        $span->setOp('eloquent');
+        /** @var HubInterface $hub */
+        $hub = $this->container->make(HubInterface::class);
 
         // Get configuration settings
         $slowQueryThreshold = (int) $this->settings->get('fof-sentry.db.slow_query_threshold', 1000);
@@ -49,22 +55,43 @@ class Eloquent extends Measure
         $querySampleRate = (int) $this->settings->get('fof-sentry.db.query_sample_rate', 100);
 
         $events->listen(QueryExecuted::class, function (QueryExecuted $event) use (
-            $span,
+            $hub,
             $slowQueryThreshold,
             $enableNPlusOneDetection,
             $nPlusOneThreshold,
             $trackQueryBindings,
             $querySampleRate
         ) {
-            static::$queryCount++;
-            static::$totalQueryTime += $event->time;
+            // Queries belong to whatever is being traced right now; outside a sampled transaction there is nothing to record.
+            $parent = $hub->getSpan();
+            $transaction = $parent?->getTransaction();
+
+            if ($parent === null || $transaction === null || !$parent->getSampled()) {
+                return;
+            }
+
+            $stats = $this->stats[$transaction] ?? ['count' => 0, 'time' => 0.0, 'patterns' => [], 'duplicates' => 0, 'top' => 0];
+
+            $stats['count']++;
+            $stats['time'] += $event->time;
 
             // Count every query, not just sampled ones, or N+1 detection undercounts below a 100% sample rate.
             $patternCount = 0;
             if ($enableNPlusOneDetection) {
                 $pattern = $this->normalizeQueryPattern($event->sql);
-                $patternCount = static::$queryPatterns[$pattern] = (static::$queryPatterns[$pattern] ?? 0) + 1;
+                $patternCount = $stats['patterns'][$pattern] = ($stats['patterns'][$pattern] ?? 0) + 1;
+
+                if ($patternCount === self::DUPLICATE_PATTERN_MIN + 1) {
+                    $stats['duplicates']++;
+                }
+
+                if ($patternCount > self::DUPLICATE_PATTERN_MIN) {
+                    $stats['top'] = max($stats['top'], $patternCount);
+                }
             }
+
+            $this->stats[$transaction] = $stats;
+            $transaction->setData($this->aggregates($stats));
 
             $shouldTrack = $querySampleRate >= 100 ||
                            $event->time >= $slowQueryThreshold ||
@@ -78,10 +105,12 @@ class Eloquent extends Measure
             $time = $end - ($event->time / 1000);
 
             $spanContext = new SpanContext();
-            $spanContext->setOp('eloquent.query');
+            // The op Sentry's Queries insights and N+1 detection look for.
+            $spanContext->setOp('db.sql.query');
             $spanContext->setDescription($event->sql);
 
             $data = [
+                'db.system'   => $this->dbSystem($event->connection->getDriverName()),
                 'connection'  => $event->connectionName,
                 'duration_ms' => $event->time,
             ];
@@ -131,10 +160,18 @@ class Eloquent extends Measure
             $spanContext->setStartTimestamp($time);
             $spanContext->setEndTimestamp($end);
 
-            $span->startChild($spanContext);
+            $parent->startChild($spanContext);
         });
 
-        return $span;
+        return null;
+    }
+
+    /**
+     * Sentry's `db.system` names differ from Laravel's driver names for Postgres.
+     */
+    protected function dbSystem(string $driver): string
+    {
+        return $driver === 'pgsql' ? 'postgresql' : $driver;
     }
 
     /**
@@ -212,31 +249,23 @@ class Eloquent extends Measure
     }
 
     /**
-     * Get aggregation statistics and attach to transaction.
+     * @param array{count: int, time: float, patterns: array<string, int>, duplicates: int, top: int} $stats
+     *
+     * @return array<string, int|float>
      */
-    public function __destruct()
+    protected function aggregates(array $stats): array
     {
-        if (static::$queryCount > 0) {
-            $aggregateData = [
-                'total_queries'       => static::$queryCount,
-                'total_query_time_ms' => round(static::$totalQueryTime, 2),
-                'avg_query_time_ms'   => round(static::$totalQueryTime / static::$queryCount, 2),
-            ];
+        $aggregates = [
+            'total_queries'       => $stats['count'],
+            'total_query_time_ms' => round($stats['time'], 2),
+            'avg_query_time_ms'   => round($stats['time'] / $stats['count'], 2),
+        ];
 
-            // Add N+1 summary
-            if (!empty(static::$queryPatterns)) {
-                $duplicatePatterns = array_filter(static::$queryPatterns, function ($count) {
-                    return $count > 5;
-                });
-
-                if (!empty($duplicatePatterns)) {
-                    arsort($duplicatePatterns);
-                    $aggregateData['duplicate_query_patterns'] = count($duplicatePatterns);
-                    $aggregateData['top_duplicate_count'] = reset($duplicatePatterns);
-                }
-            }
-
-            $this->transaction->setData($aggregateData);
+        if ($stats['duplicates'] > 0) {
+            $aggregates['duplicate_query_patterns'] = $stats['duplicates'];
+            $aggregates['top_duplicate_count'] = $stats['top'];
         }
+
+        return $aggregates;
     }
 }

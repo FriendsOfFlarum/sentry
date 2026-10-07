@@ -32,7 +32,8 @@ const buildDist = (filename, env, define = {}, buildAdmin = false, clean = false
 };
 
 module.exports = env => {
-  const plain = buildDist('[name].js', env, {}, true, true);
+  // The four builds run in parallel into the same dist, so cleaning must spare the variants or it can delete a sibling's output.
+  const plain = buildDist('[name].js', env, {}, true, { keep: /^forum\.(tracing|replay)/ });
 
   const tracing = buildDist('[name].tracing.js', env, {
     __SENTRY_TRACING__: true,

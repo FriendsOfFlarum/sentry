@@ -18,6 +18,9 @@ use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Container\Container;
 
+use function Sentry\getBaggage;
+use function Sentry\getTraceparent;
+
 class SentryJavaScript
 {
     public function __construct(private SettingsRepositoryInterface $settings, private UrlGenerator $url, private Container $container, private Config $config)
@@ -79,6 +82,10 @@ class SentryJavaScript
             // Merge custom tags with the default ones
             $config['tags'] = array_merge($config['tags'], $customTags);
         }
+
+        // Lets the browser SDK's pageload transaction continue this request's trace.
+        $document->meta['sentry-trace'] = getTraceparent();
+        $document->meta['baggage'] = getBaggage();
 
         // Add the config to the document payload
         $document->payload['fof-sentry'] = $config;
