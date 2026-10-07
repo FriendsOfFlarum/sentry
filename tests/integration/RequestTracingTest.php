@@ -178,4 +178,17 @@ class RequestTracingTest extends TestCase
         $this->assertNotEmpty($querySpans);
         $this->assertStringStartsWith('select', strtolower((string) reset($querySpans)->getDescription()));
     }
+
+    #[Test]
+    public function query_totals_are_attached_to_the_transaction(): void
+    {
+        $this->sendTraced($this->request('GET', '/api/discussions'));
+
+        $transaction = RecordingTransport::transactions()[0];
+        $querySpans = array_filter($transaction->getSpans(), fn ($span) => $span->getOp() === 'db.sql.query');
+
+        // Every query is sampled at the default 100% query sample rate, so the total matches the spans.
+        $this->assertNotEmpty($querySpans);
+        $this->assertSame(count($querySpans), $transaction->getContexts()['trace']['data']['total_queries'] ?? null);
+    }
 }
