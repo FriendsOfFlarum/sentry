@@ -22,7 +22,7 @@ fof-sentry:
       environment_label: Sentry Environment
       environment_help: 'Tag all events with an environment name (e.g., "production", "staging", "development"). This helps you filter errors by deployment environment and set different alert rules per environment.'
       user_feedback_label: Enable User Feedback Dialog
-      user_feedback_help: When enabled, users see a feedback form after encountering an error, allowing them to describe what happened. The form pre-fills with their username, email (if enabled), and group membership. Creates a direct communication channel with users experiencing issues. Requires a direct Sentry DSN (not a Relay DSN).
+      user_feedback_help: When enabled, users see a feedback form after encountering an error, allowing them to describe what happened. The form pre-fills with their display name and email (if enabled). Creates a direct communication channel with users experiencing issues. Requires the primary DSN to be a direct Sentry DSN; the backend-only DSN can be a Relay.
       send_user_emails_label: Include User Email Addresses in Reports
       send_user_emails_help: 'When enabled, user email addresses are included in all Sentry events for contacting users and filtering errors. Privacy consideration: Review your privacy policy before enabling. User ID, username, and groups are always included regardless of this setting.'
 
