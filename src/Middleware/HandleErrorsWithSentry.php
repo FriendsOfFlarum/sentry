@@ -12,85 +12,29 @@
 namespace FoF\Sentry\Middleware;
 
 use Flarum\Http\RequestUtil;
-use Flarum\Settings\SettingsRepositoryInterface;
-use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\Container;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Sentry\State\HubInterface;
-use Sentry\State\Scope;
 
+/**
+ * Only records the request. User context is built from it lazily, when an event
+ * is actually sent (see SentryServiceProvider::attachUser).
+ */
 class HandleErrorsWithSentry implements MiddlewareInterface
 {
-    public function __construct(public Container $container)
+    public function __construct(protected Container $container)
     {
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->container->instance('sentry.request', $request);
-
-        // Set user context for Sentry if HubInterface is bound (meaning Sentry is initialized)
-        if ($this->container->bound(HubInterface::class)) {
-            $this->setUserContext($request);
+        // Internal API client calls run this stack too; keep the outer request, which carries the client IP.
+        if (!RequestUtil::isInternal($request) || !$this->container->bound('sentry.request')) {
+            $this->container->instance('sentry.request', $request);
         }
 
         return $handler->handle($request);
-    }
-
-    /**
-     * Set user context for Sentry events.
-     */
-    protected function setUserContext(ServerRequestInterface $request): void
-    {
-        /** @var HubInterface $hub */
-        $hub = $this->container->make(HubInterface::class);
-
-        /** @var SettingsRepositoryInterface $settings */
-        $settings = $this->container->make(SettingsRepositoryInterface::class);
-
-        $hub->configureScope(function (Scope $scope) use ($request, $settings) {
-            $user = RequestUtil::getActor($request);
-
-            $data = [];
-
-            $ipAddress = $request->getAttribute('ipAddress');
-            if ($ipAddress) {
-                $data['ip_address'] = $ipAddress;
-            }
-
-            if (!$user->isGuest() && $user->id !== 0) {
-                $data['id'] = $user->id;
-                $data['username'] = $user->display_name;
-
-                if ($user->display_name !== $user->username) {
-                    $data['username_slug'] = $user->username;
-                }
-
-                // Only send email if enabled in settings
-                if ((bool) $settings->get('fof-sentry.send_emails_with_sentry_reports')) {
-                    $data['email'] = $user->email;
-                }
-
-                // Add user groups (load the relationship if not already loaded)
-                if (!$user->relationLoaded('groups')) {
-                    $user->load('groups');
-                }
-
-                $groups = $user->groups->pluck('name_singular')->filter()->all();
-
-                if (!empty($groups)) {
-                    $data['groups'] = implode(', ', $groups);
-                }
-            }
-
-            if (!empty($data)) {
-                $scope->setUser($data);
-            }
-        });
     }
 }

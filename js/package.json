@@ -2,6 +2,7 @@
   "name": "@fof/sentry",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "prettier": "@flarum/prettier-config",
   "dependencies": {
     "@sentry/browser": "^10.31.0"
@@ -15,18 +16,20 @@
     "build-typings": "npm run clean-typings && ([ -e src/@types ] && cp -r src/@types dist-typings/@types || true) && tsc && npm run post-build-typings",
     "post-build-typings": "find dist-typings -type f -name '*.d.ts' -print0 | xargs -0 sed -i 's,../src/@types,@types,g'",
     "check-typings": "tsc --noEmit --emitDeclarationOnly false",
-    "check-typings-coverage": "typescript-coverage-report"
+    "check-typings-coverage": "typescript-coverage-report",
+    "test": "yarn node --experimental-vm-modules $(yarn bin jest)"
   },
   "devDependencies": {
+    "@flarum/jest-config": "^2.0.2",
     "@flarum/prettier-config": "^1.0.0",
+    "flarum-tsconfig": "^2.0.0",
+    "flarum-webpack-config": "^3.0.6",
     "prettier": "^3.0.3",
-    "webpack-bundle-analyzer": "^4.9.0",
-    "webpack-merge": "^5.9.0",
     "typescript": "^4.5.4",
     "typescript-coverage-report": "^0.6.1",
-    "flarum-tsconfig": "^2.0.0",
-    "flarum-webpack-config": "^3.0.0",
     "webpack": "^5.104.1",
-    "webpack-cli": "^5.1.4"
+    "webpack-bundle-analyzer": "^4.9.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-merge": "^5.9.0"
   }
 }

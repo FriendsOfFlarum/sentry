@@ -56,11 +56,16 @@ class Eloquent extends Measure
             $trackQueryBindings,
             $querySampleRate
         ) {
-            // Update aggregation stats
             static::$queryCount++;
             static::$totalQueryTime += $event->time;
 
-            // Sample queries based on sample rate (0-100%)
+            // Count every query, not just sampled ones, or N+1 detection undercounts below a 100% sample rate.
+            $patternCount = 0;
+            if ($enableNPlusOneDetection) {
+                $pattern = $this->normalizeQueryPattern($event->sql);
+                $patternCount = static::$queryPatterns[$pattern] = (static::$queryPatterns[$pattern] ?? 0) + 1;
+            }
+
             $shouldTrack = $querySampleRate >= 100 ||
                            $event->time >= $slowQueryThreshold ||
                            mt_rand(1, 100) <= $querySampleRate;
@@ -70,31 +75,26 @@ class Eloquent extends Measure
             }
 
             $end = microtime(true);
-            $time = microtime(true) - ($event->time / 1000);
+            $time = $end - ($event->time / 1000);
 
             $spanContext = new SpanContext();
             $spanContext->setOp('eloquent.query');
             $spanContext->setDescription($event->sql);
 
-            // Base data
             $data = [
                 'connection'  => $event->connectionName,
                 'duration_ms' => $event->time,
             ];
 
-            // Collect tags for this span
             $tags = [];
 
-            // Add query bindings if enabled
             if ($trackQueryBindings && !empty($event->bindings)) {
                 $data['bindings'] = $this->sanitizeBindings($event->bindings);
             }
 
-            // Detect slow queries
             if ($event->time >= $slowQueryThreshold) {
                 $tags['slow_query'] = 'true';
 
-                // Categorize severity
                 if ($event->time >= $slowQueryThreshold * 5) {
                     $tags['severity'] = 'critical';
                 } elseif ($event->time >= $slowQueryThreshold * 2) {
@@ -104,23 +104,13 @@ class Eloquent extends Measure
                 }
             }
 
-            // Detect N+1 queries
-            if ($enableNPlusOneDetection) {
-                $pattern = $this->normalizeQueryPattern($event->sql);
+            if ($enableNPlusOneDetection && $patternCount >= $nPlusOneThreshold) {
+                $tags['n_plus_one_candidate'] = 'true';
+                $data['execution_count'] = $patternCount;
 
-                if (!isset(static::$queryPatterns[$pattern])) {
-                    static::$queryPatterns[$pattern] = 0;
-                }
-                static::$queryPatterns[$pattern]++;
-
-                if (static::$queryPatterns[$pattern] >= $nPlusOneThreshold) {
-                    $tags['n_plus_one_candidate'] = 'true';
-                    $data['execution_count'] = static::$queryPatterns[$pattern];
-
-                    // Only set severity on the threshold hit (not every subsequent query)
-                    if (static::$queryPatterns[$pattern] === $nPlusOneThreshold) {
-                        $tags['severity'] = 'warning';
-                    }
+                // Only set severity on the threshold hit (not every subsequent query)
+                if ($patternCount === $nPlusOneThreshold) {
+                    $tags['severity'] = 'warning';
                 }
             }
 
@@ -140,7 +130,6 @@ class Eloquent extends Measure
             $spanContext->setData($data);
             $spanContext->setStartTimestamp($time);
             $spanContext->setEndTimestamp($end);
-            $spanContext->setSampled(true);
 
             $span->startChild($spanContext);
         });

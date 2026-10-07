@@ -64,7 +64,7 @@ An optional separate DSN for backend errors only. This is useful if you want to:
 - Route backend errors through a Relay for improved performance
 - Separate backend and frontend error tracking
 
-If not set, the primary DSN will be used for both frontend and backend.
+If not set, the primary DSN will be used for both frontend and backend. The user feedback dialog always uses the primary DSN, so it keeps working when the backend DSN is a Relay.
 
 #### Environment
 **Setting**: `fof-sentry.environment` (optional)
@@ -77,7 +77,7 @@ Set the environment name for all Sentry events (e.g., "production", "staging", "
 **Setting**: `fof-sentry.user_feedback`
 **Default**: `false`
 
-When enabled, users will see a feedback dialog when an error occurs, allowing them to provide additional context about what happened. The dialog pre-fills with their username, email (if enabled), and group membership.
+When enabled, users will see a feedback dialog when an error occurs, allowing them to provide additional context about what happened. The dialog pre-fills with their display name and email (if enabled).
 
 **Important**: This feature requires a direct Sentry DSN (not a Relay DSN).
 
