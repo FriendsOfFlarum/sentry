@@ -11,7 +11,7 @@ A [Flarum](http://flarum.org) extension. Flarum integration for [Sentry](https:/
 - **Error Tracking**: Automatically capture and report PHP and JavaScript errors to Sentry
 - **Performance Monitoring**: Track backend and frontend performance with configurable sample rates
 - **Database Query Monitoring**: Advanced database performance tracking with N+1 detection
-- **User Context**: Automatically include user information (ID, username, email, groups) with error reports
+- **User Context**: Automatically include user information (ID, username, IP address, email, groups) with error reports, from both the backend and the browser
 - **User Feedback**: Allow users to submit feedback when errors occur
 - **Session Replay**: Record user sessions to reproduce bugs (frontend only)
 - **Profiling**: PHP profiling support via Excimer extension
