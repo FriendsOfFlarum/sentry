@@ -14,6 +14,7 @@ namespace FoF\Sentry\Performance;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Events\QueryExecuted;
+use Sentry\State\HubInterface;
 use Sentry\Tracing\Span;
 use Sentry\Tracing\SpanContext;
 
@@ -38,8 +39,8 @@ class Eloquent extends Measure
 
         $this->settings = $this->container->make(SettingsRepositoryInterface::class);
 
-        $span = $this->transaction->startChild(new SpanContext());
-        $span->setOp('eloquent');
+        /** @var HubInterface $hub */
+        $hub = $this->container->make(HubInterface::class);
 
         // Get configuration settings
         $slowQueryThreshold = (int) $this->settings->get('fof-sentry.db.slow_query_threshold', 1000);
@@ -49,13 +50,20 @@ class Eloquent extends Measure
         $querySampleRate = (int) $this->settings->get('fof-sentry.db.query_sample_rate', 100);
 
         $events->listen(QueryExecuted::class, function (QueryExecuted $event) use (
-            $span,
+            $hub,
             $slowQueryThreshold,
             $enableNPlusOneDetection,
             $nPlusOneThreshold,
             $trackQueryBindings,
             $querySampleRate
         ) {
+            // Queries belong to whatever is being traced right now; outside a sampled transaction there is nothing to record.
+            $parent = $hub->getSpan();
+
+            if ($parent === null || !$parent->getSampled()) {
+                return;
+            }
+
             static::$queryCount++;
             static::$totalQueryTime += $event->time;
 
@@ -78,10 +86,12 @@ class Eloquent extends Measure
             $time = $end - ($event->time / 1000);
 
             $spanContext = new SpanContext();
-            $spanContext->setOp('eloquent.query');
+            // The op Sentry's Queries insights and N+1 detection look for.
+            $spanContext->setOp('db.sql.query');
             $spanContext->setDescription($event->sql);
 
             $data = [
+                'db.system'   => $this->dbSystem($event->connection->getDriverName()),
                 'connection'  => $event->connectionName,
                 'duration_ms' => $event->time,
             ];
@@ -131,10 +141,18 @@ class Eloquent extends Measure
             $spanContext->setStartTimestamp($time);
             $spanContext->setEndTimestamp($end);
 
-            $span->startChild($spanContext);
+            $parent->startChild($spanContext);
         });
 
-        return $span;
+        return null;
+    }
+
+    /**
+     * Sentry's `db.system` names differ from Laravel's driver names for Postgres.
+     */
+    protected function dbSystem(string $driver): string
+    {
+        return $driver === 'pgsql' ? 'postgresql' : $driver;
     }
 
     /**

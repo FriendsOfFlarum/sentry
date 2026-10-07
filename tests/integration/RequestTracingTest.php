@@ -161,4 +161,21 @@ class RequestTracingTest extends TestCase
         $this->assertMatchesRegularExpression('/<meta name="sentry-trace" content="'.$traceId.'-[0-9a-f]{16}-1">/', $html);
         $this->assertMatchesRegularExpression('/<meta name="baggage" content="[^"]*sentry-trace_id='.$traceId.'[^"]*">/', $html);
     }
+
+    #[Test]
+    public function database_queries_are_spans_of_the_request_transaction(): void
+    {
+        $this->sendTraced($this->request('GET', '/api/discussions'));
+
+        $transaction = RecordingTransport::transactions()[0];
+        $transactionSpanId = (string) $transaction->getContexts()['trace']['span_id'];
+
+        $querySpans = array_filter(
+            $transaction->getSpans(),
+            fn ($span) => $span->getOp() === 'db.sql.query' && (string) $span->getParentSpanId() === $transactionSpanId
+        );
+
+        $this->assertNotEmpty($querySpans);
+        $this->assertStringStartsWith('select', strtolower((string) reset($querySpans)->getDescription()));
+    }
 }

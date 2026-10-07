@@ -21,6 +21,8 @@ use Illuminate\Events\Dispatcher;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
+use Sentry\State\Hub;
+use Sentry\State\HubInterface;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionContext;
 
@@ -41,9 +43,16 @@ class EloquentNPlusOneCountingTest extends TestCase
         $patterns = new ReflectionProperty(Eloquent::class, 'queryPatterns');
         $patterns->setValue(null, []);
 
-        (new Eloquent(new Transaction(new TransactionContext()), $container))->handle();
+        // Queries are only analysed while a sampled transaction is the hub's current span.
+        $transaction = new Transaction(new TransactionContext());
+        $transaction->setSampled(true);
+        $hub = new Hub();
+        $hub->setSpan($transaction);
+        $container->instance(HubInterface::class, $hub);
 
-        $connection = new Connection(fn () => null);
+        (new Eloquent($transaction, $container))->handle();
+
+        $connection = new Connection(fn () => null, '', '', ['driver' => 'mysql']);
 
         foreach ([1, 2, 3] as $id) {
             $events->dispatch(new QueryExecuted("select * from users where id = $id", [], 1.0, $connection));
