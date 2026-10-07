@@ -32,4 +32,14 @@ describe('forum boot', () => {
     expect(getClient()?.getIntegrationByName('BrowserTracing')).toBeUndefined();
     expect(getClient()?.getIntegrationByName('Replay')).toBeUndefined();
   });
+
+  it('records the visitor IP, like the backend does', () => {
+    // Sent with every envelope; Relay only fills in the IP when this is "auto".
+    expect(getClient()?.getSdkMetadata()?.sdk?.settings?.infer_ip).toBe('auto');
+  });
+
+  it('collects no cookies, request bodies or database values', () => {
+    // Opting into user info must not opt into everything else the SDK can collect.
+    expect(getClient()?.getDataCollectionOptions()).toMatchObject({ cookies: false, httpBodies: [], databaseQueryData: false });
+  });
 });

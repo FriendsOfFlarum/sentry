@@ -103,6 +103,17 @@ export function createClient(config: SentryConfig): BrowserClient {
     environment: config.environment,
     release: config.release,
 
+    // Record the visitor's IP, as the backend does. Naming only `userInfo` would make the SDK fall back to
+    // collecting everything else too, so the rest is spelled out as off.
+    dataCollection: {
+      userInfo: true,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      databaseQueryData: false,
+      genAI: { inputs: false, outputs: false },
+    },
+
     beforeSend: (event) => {
       event.logger = 'javascript';
 

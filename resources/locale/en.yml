@@ -24,7 +24,7 @@ fof-sentry:
       user_feedback_label: Enable User Feedback Dialog
       user_feedback_help: When enabled, users see a feedback form after encountering an error, allowing them to describe what happened. The form pre-fills with their display name and email (if enabled). Creates a direct communication channel with users experiencing issues. Requires the primary DSN to be a direct Sentry DSN; the backend-only DSN can be a Relay.
       send_user_emails_label: Include User Email Addresses in Reports
-      send_user_emails_help: 'When enabled, user email addresses are included in all Sentry events for contacting users and filtering errors. Privacy consideration: Review your privacy policy before enabling. User ID, username, and groups are always included regardless of this setting.'
+      send_user_emails_help: 'When enabled, user email addresses are included in all Sentry events for contacting users and filtering errors. Privacy consideration: Review your privacy policy before enabling. User ID, username, groups and IP address are always included regardless of this setting.'
 
       monitor_performance_label: Backend Performance Monitoring Sample Rate
       monitor_performance_help: 'Percentage of backend requests to trace (0 = disabled, 100 = trace all). Performance traces include request/response time, database queries, and extension loading times. Recommendation: Start with 10-25% in production, 100% in staging. Lower values reduce data volume and Sentry costs.'
