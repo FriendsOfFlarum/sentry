@@ -22,9 +22,14 @@ app.initializers.add(
   () => {
     const config = app.data['fof-sentry'] as SentryConfig | undefined;
 
-    if (config?.dsn) {
-      createClient(config).init();
+    if (!config?.dsn) {
+      return;
     }
+
+    createClient(config).init();
+
+    // Initializers run before the session is loaded; identify the user once it is.
+    app.beforeMount(() => setUser(getUserData()));
   },
   // Ahead of other extensions' initializers, so errors thrown in them are captured.
   1000

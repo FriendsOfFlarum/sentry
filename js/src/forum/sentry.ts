@@ -153,7 +153,7 @@ export function createClient(config: SentryConfig): BrowserClient {
   // bound to the current scope. The caller still runs `client.init()` afterwards.
   setCurrentClient(client);
 
-  // This runs from the page foot script after app.boot(), so the session is available.
+  // Covers callers that create a client after boot; at boot the initializer sets the user once the session exists.
   setUser(getUserData());
 
   return client;

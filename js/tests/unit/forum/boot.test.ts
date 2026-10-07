@@ -1,6 +1,6 @@
 import bootstrapForum from '@flarum/jest-config/src/bootstrap/forum';
 import app from 'flarum/forum/app';
-import { BrowserClient, getClient } from '@sentry/browser';
+import { BrowserClient, getClient, getIsolationScope } from '@sentry/browser';
 
 const dsn = 'https://public@example.ingest.sentry.io/1';
 
@@ -18,5 +18,10 @@ describe('forum boot', () => {
 
     expect(client).toBeInstanceOf(BrowserClient);
     expect(client?.getOptions().dsn).toBe(dsn);
+  });
+
+  it('identifies the logged-in user once the session exists', () => {
+    // The bootstrap logs in user 1, "Admin".
+    expect(getIsolationScope().getUser()).toMatchObject({ id: '1', username: 'Admin' });
   });
 });
