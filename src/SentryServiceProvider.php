@@ -171,7 +171,6 @@ class SentryServiceProvider extends AbstractServiceProvider
             );
         });
 
-
         // js assets
         $this->container->resolving(
             'flarum.assets.forum',
