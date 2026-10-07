@@ -90,28 +90,5 @@ class SentryJavaScript
         // Add the config to the document payload
         $document->payload['fof-sentry'] = $config;
         $document->payload['fof-sentry.scrub-emails'] = (bool) $shouldScrubEmailsFromUserData;
-
-        $document->foot[] = "
-                <script>
-                    if (window.Sentry) {
-                        const sentryConfig = app.data['fof-sentry'] || {};
-                        const client = Sentry.createClient({
-                            dsn: sentryConfig.dsn || '$dsn',
-                            environment: sentryConfig.environment || '$environment',
-                            release: sentryConfig.release || '$release',
-                            scrubEmails: sentryConfig.scrubEmails !== undefined ? sentryConfig.scrubEmails : ".($shouldScrubEmailsFromUserData ? 'true' : 'false').',
-                            showFeedback: sentryConfig.showFeedback !== undefined ? sentryConfig.showFeedback : '.($showFeedback ? 'true' : 'false').',
-                            captureConsole: sentryConfig.captureConsole !== undefined ? sentryConfig.captureConsole : '.($captureConsole ? 'true' : 'false').",
-                            tracesSampleRate: sentryConfig.tracesSampleRate !== undefined ? sentryConfig.tracesSampleRate : $tracesSampleRate,
-                            replaysSessionSampleRate: sentryConfig.replaysSessionSampleRate !== undefined ? sentryConfig.replaysSessionSampleRate : $replaysSessionSampleRate,
-                            replaysOnErrorSampleRate: sentryConfig.replaysOnErrorSampleRate !== undefined ? sentryConfig.replaysOnErrorSampleRate : $replaysErrorSampleRate,
-                            tags: sentryConfig.tags || {}
-                        });
-
-                        client.init();
-                    } else {
-                        console.error('Unable to initialize Sentry');
-                    }
-                </script>";
     }
 }

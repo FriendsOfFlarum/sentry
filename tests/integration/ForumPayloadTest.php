@@ -168,15 +168,16 @@ class ForumPayloadTest extends TestCase
     }
 
     #[Test]
-    public function the_bootstrap_script_is_emitted_when_javascript_is_enabled(): void
+    public function no_inline_bootstrap_script_is_emitted(): void
     {
+        // The forum bundle starts Sentry itself from the payload, so nothing is inlined into the page.
         $this->setting('fof-sentry.dsn', 'https://public@example.ingest.sentry.io/1');
         $this->setting('fof-sentry.javascript', 1);
 
         $html = $this->forumHtml();
 
-        $this->assertStringContainsString('Sentry.createClient', $html);
-        $this->assertStringContainsString('client.init()', $html);
+        $this->assertNotNull($this->payload($html));
+        $this->assertStringNotContainsString('Sentry.createClient', $html);
     }
 
     #[Test]
