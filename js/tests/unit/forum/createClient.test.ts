@@ -21,7 +21,7 @@ const baseConfig = { environment: 'test', release: '1.0.0', tracesSampleRate: 0 
 
 beforeAll(async () => {
   Sentry = await import('@sentry/browser');
-  await import('../../../src/forum/index.js');
+  await import('../../../src/forum/index');
   sentry = (window as any).Sentry;
 
   bootstrapForum();
