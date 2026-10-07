@@ -17,6 +17,7 @@ use FoF\Sentry\SentryServiceProvider;
 use Illuminate\Contracts\Container\Container;
 use Sentry\State\HubInterface;
 use Sentry\Tracing\Span;
+use Sentry\Tracing\SpanContext;
 use Sentry\Tracing\SpanStatus;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionContext;
@@ -76,13 +77,27 @@ class Tracer
     }
 
     /**
-     * Starts a transaction for one queued job and remembers the span it displaces.
+     * Traces one queued job: its own transaction in a worker, or a child span when a sync
+     * job runs inside something already being traced (such as a request).
      *
-     * @return array{0: Transaction, 1: Span|null}
+     * @return array{0: Span, 1: Span|null} The job's span and the span it displaced.
      */
     public function startJob(string $name): array
     {
-        $previous = $this->container->make(HubInterface::class)->getSpan();
+        /** @var HubInterface $hub */
+        $hub = $this->container->make(HubInterface::class);
+        $previous = $hub->getSpan();
+
+        if ($previous !== null) {
+            $context = new SpanContext();
+            $context->setOp('queue.process');
+            $context->setDescription($name);
+
+            $span = $previous->startChild($context);
+            $hub->setSpan($span);
+
+            return [$span, $previous];
+        }
 
         $context = new TransactionContext($name);
         $context->setOp('queue.process');
@@ -94,14 +109,14 @@ class Tracer
     /**
      * Workers have no response to wait for, so a job's transaction is sent straight away.
      *
-     * @param array{0: Transaction, 1: Span|null} $job
+     * @param array{0: Span, 1: Span|null} $job
      */
     public function finishJob(array $job, SpanStatus $status): void
     {
-        [$transaction, $previous] = $job;
+        [$span, $previous] = $job;
 
-        $transaction->setStatus($status);
-        $transaction->finish();
+        $span->setStatus($status);
+        $span->finish();
 
         $this->container->make(HubInterface::class)->setSpan($previous);
     }

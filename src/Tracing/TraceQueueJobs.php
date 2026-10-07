@@ -18,14 +18,13 @@ use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Sentry\Tracing\Span;
 use Sentry\Tracing\SpanStatus;
-use Sentry\Tracing\Transaction;
 
 /**
  * One transaction per queued job, so a long-running worker is never traced as a single endless transaction.
  */
 class TraceQueueJobs
 {
-    /** @var array<int, array{0: Transaction, 1: Span|null}> Jobs in progress; a job can dispatch a sync job. */
+    /** @var array<int, array{0: Span, 1: Span|null}> Jobs in progress; a job can dispatch a sync job. */
     protected array $running = [];
 
     public function __construct(protected Container $container)

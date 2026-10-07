@@ -13,6 +13,7 @@ namespace FoF\Sentry\Tests\integration;
 
 use Flarum\Extend;
 use Flarum\Testing\integration\TestCase;
+use FoF\Sentry\Tests\fixtures\DispatchingRequestHandler;
 use FoF\Sentry\Tests\fixtures\RecordingTransport;
 use FoF\Sentry\Tests\fixtures\ThrowingRequestHandler;
 use FoF\Sentry\Tracing\AfterResponse;
@@ -190,5 +191,19 @@ class RequestTracingTest extends TestCase
         // Every query is sampled at the default 100% query sample rate, so the total matches the spans.
         $this->assertNotEmpty($querySpans);
         $this->assertSame(count($querySpans), $transaction->getContexts()['trace']['data']['total_queries'] ?? null);
+    }
+
+    #[Test]
+    public function a_job_run_during_a_request_is_a_span_of_the_request(): void
+    {
+        $this->extend((new Extend\Routes('api'))->post('/sentry-test/dispatch', 'sentry-test.dispatch', DispatchingRequestHandler::class));
+
+        $this->sendTraced($this->request('POST', '/api/sentry-test/dispatch', ['authenticatedAs' => 1]));
+
+        $transactions = RecordingTransport::transactions();
+        $jobSpans = array_filter($transactions[0]->getSpans(), fn ($span) => $span->getOp() === 'queue.process');
+
+        $this->assertCount(1, $transactions);
+        $this->assertCount(1, $jobSpans);
     }
 }
