@@ -22,9 +22,11 @@ use Flarum\Frontend\Assets;
 use Flarum\Frontend\Compiler\Source\SourceCollector;
 use Flarum\Http\UrlGenerator;
 use Flarum\Settings\SettingsRepositoryInterface;
-use FoF\Sentry\Contracts\Measure;
 use FoF\Sentry\Formatters\SentryFormatter;
+use FoF\Sentry\Middleware\TraceRequest;
 use FoF\Sentry\Reporters\SentryReporter;
+use FoF\Sentry\Tracing\AfterResponse;
+use FoF\Sentry\Tracing\Tracer;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
 use Sentry\Event;
@@ -32,8 +34,6 @@ use Sentry\EventHint;
 use Sentry\SentrySdk;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
-use Sentry\Tracing\Transaction;
-use Sentry\Tracing\TransactionContext;
 use Sentry\UserDataBag;
 
 use function Sentry\init;
@@ -46,9 +46,6 @@ class SentryServiceProvider extends AbstractServiceProvider
         Performance\Extension::class,
         Performance\Frontend::class,
     ];
-
-    /** @var array<mixed> */
-    protected static array $transactionStack = [];
 
     public function register()
     {
@@ -148,6 +145,20 @@ class SentryServiceProvider extends AbstractServiceProvider
             return $container->make(HubInterface::class);
         });
 
+        $this->container->singleton(AfterResponse::class);
+        $this->container->singleton(Tracer::class);
+
+        // Outermost on every frontend, so the transaction covers the whole middleware stack.
+        foreach (['forum', 'admin', 'api'] as $frontend) {
+            $this->container->bind("fof.sentry.middleware.trace.$frontend", function (Container $container) use ($frontend) {
+                return new TraceRequest($frontend, $container);
+            });
+
+            $this->container->extend("flarum.$frontend.middleware", function (array $middleware) use ($frontend) {
+                return array_merge(["fof.sentry.middleware.trace.$frontend"], $middleware);
+            });
+        }
+
         $this->container->singleton(ViewFormatter::class, SentryFormatter::class);
 
         $this->container->tag(SentryReporter::class, Reporter::class);
@@ -200,31 +211,7 @@ class SentryServiceProvider extends AbstractServiceProvider
 
         // Initialise now rather than on first error, so the SDK's own handlers are in place
         // for uncaught exceptions, PHP warnings and fatal errors from the start of the request.
-        /** @var HubInterface $hub */
-        $hub = $this->container->make(HubInterface::class);
-
-        if ((int) $settings->get('fof-sentry.monitor_performance') <= 0) {
-            return;
-        }
-
-        $transaction = $hub->startTransaction(new TransactionContext('flarum'));
-
-        // Unsampled transactions are never sent, so skip all measurement work for them.
-        if (!$transaction->getSampled()) {
-            return;
-        }
-
-        $measurements = $this->container->make('fof.sentry.measurements');
-
-        foreach ($measurements as $measurement) {
-            /** @var Measure $measure */
-            $measure = new $measurement($transaction, $this->container);
-            if ($span = $measure->handle()) {
-                static::$transactionStack[] = $span;
-            }
-        }
-
-        static::$transactionStack[] = $transaction;
+        $this->container->make(HubInterface::class);
     }
 
     /**
@@ -269,14 +256,6 @@ class SentryServiceProvider extends AbstractServiceProvider
         }
 
         return $event;
-    }
-
-    public function __destruct()
-    {
-        /** @var Transaction $transaction */
-        foreach (static::$transactionStack as $transaction) {
-            $transaction->finish();
-        }
     }
 
     /**
