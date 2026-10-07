@@ -13,17 +13,11 @@ import {
   linkedErrorsIntegration,
   httpContextIntegration,
   dedupeIntegration,
-  browserTracingIntegration,
-  replayIntegration,
   captureConsoleIntegration,
 } from '@sentry/browser';
 import type { User } from '@sentry/browser';
 
 type Integration = NonNullable<ConstructorParameters<typeof BrowserClient>[0]['integrations']>[number];
-
-// Injected by webpack's DefinePlugin (see webpack.config.cjs).
-declare const __SENTRY_TRACING__: boolean;
-declare const __SENTRY_SESSION_REPLAY__: boolean;
 
 /**
  * The browser configuration the backend puts in the forum payload (see SentryJavaScript.php).
@@ -63,14 +57,6 @@ const integrations: Integration[] = [
   }),
   httpContextIntegration(),
 ];
-
-if (__SENTRY_TRACING__) {
-  integrations.push(browserTracingIntegration());
-}
-
-if (__SENTRY_SESSION_REPLAY__) {
-  integrations.push(replayIntegration());
-}
 
 export function getUserData(nameAttr = 'username'): User {
   const user = app.session?.user;

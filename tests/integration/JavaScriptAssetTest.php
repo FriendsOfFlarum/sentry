@@ -16,13 +16,8 @@ use Flarum\Testing\integration\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 /**
- * The browser bundle ships in four variants so sites that do not use tracing or
- * session replay do not pay for that code. SentryServiceProvider picks the
- * variant from the sample rate settings.
- *
- * A missing variant would mean a broken forum bundle, so these tests assert the
- * files the provider can select all exist, and that the selection logic maps
- * settings to the right one.
+ * The forum gets one Sentry bundle, whatever the sample rates; tracing and session
+ * replay are separate chunks it loads on demand.
  */
 class JavaScriptAssetTest extends TestCase
 {
@@ -33,63 +28,11 @@ class JavaScriptAssetTest extends TestCase
         $this->extension('fof-sentry');
     }
 
-    /**
-     * Reproduces the filename selection in SentryServiceProvider.
-     */
-    private function expectedVariant(int $traceRate, int $sessionReplayRate, int $errorReplayRate): string
-    {
-        $filename = 'forum';
-
-        if ($traceRate > 0) {
-            $filename .= '.tracing';
-        }
-
-        if ($sessionReplayRate > 0 || $errorReplayRate > 0) {
-            $filename .= '.replay';
-        }
-
-        return $filename;
-    }
-
     #[Test]
-    public function every_selectable_bundle_variant_exists(): void
+    public function the_forum_bundle_exists(): void
     {
-        foreach (['forum', 'forum.tracing', 'forum.replay', 'forum.tracing.replay'] as $variant) {
-            $this->assertFileExists(
-                __DIR__."/../../js/dist/$variant.js",
-                "The $variant bundle variant must be built."
-            );
-        }
-    }
-
-    #[Test]
-    public function the_base_bundle_is_selected_when_tracing_and_replay_are_off(): void
-    {
-        $this->assertSame('forum', $this->expectedVariant(0, 0, 0));
-    }
-
-    #[Test]
-    public function the_tracing_bundle_is_selected_when_tracing_is_on(): void
-    {
-        $this->assertSame('forum.tracing', $this->expectedVariant(50, 0, 0));
-    }
-
-    #[Test]
-    public function the_replay_bundle_is_selected_for_session_replay(): void
-    {
-        $this->assertSame('forum.replay', $this->expectedVariant(0, 10, 0));
-    }
-
-    #[Test]
-    public function the_replay_bundle_is_selected_for_error_replay_alone(): void
-    {
-        $this->assertSame('forum.replay', $this->expectedVariant(0, 0, 25));
-    }
-
-    #[Test]
-    public function the_combined_bundle_is_selected_when_both_are_on(): void
-    {
-        $this->assertSame('forum.tracing.replay', $this->expectedVariant(50, 10, 0));
+        // One bundle for every configuration; tracing and replay are chunks loaded on demand.
+        $this->assertFileExists(__DIR__.'/../../js/dist/forum.js');
     }
 
     #[Test]

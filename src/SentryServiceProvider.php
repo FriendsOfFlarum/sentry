@@ -167,31 +167,15 @@ class SentryServiceProvider extends AbstractServiceProvider
             function (Assets $assets) {
                 $settings = resolve('flarum.settings');
 
-                // Without a public DSN the browser client is disabled, so don't ship the SDK at all.
+                // Without a public DSN the browser client is disabled, so don't ship the SDK at all. Tracing and
+                // replay are separate chunks (see extend.php) loaded on demand, so sample rates never change this bundle.
                 if ((int) $settings->get('fof-sentry.javascript') && $settings->get('fof-sentry.dsn')) {
                     $assets->js(function (SourceCollector $sources) {
                         $sources->addString(function () {
                             return 'var module={};';
                         });
 
-                        $traceSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.trace_sample_rate');
-                        $replaysSessionSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.replays_session_sample_rate');
-                        $replaysErrorSampleRate = (int) resolve('flarum.settings')->get('fof-sentry.javascript.replays_error_sample_rate');
-
-                        $usePerformanceMonitoring = $traceSampleRate > 0;
-                        $useReplay = $replaysSessionSampleRate > 0 || $replaysErrorSampleRate > 0;
-
-                        $filename = 'forum';
-
-                        if ($usePerformanceMonitoring) {
-                            $filename .= '.tracing';
-                        }
-
-                        if ($useReplay) {
-                            $filename .= '.replay';
-                        }
-
-                        $sources->addFile(__DIR__."/../js/dist/$filename.js");
+                        $sources->addFile(__DIR__.'/../js/dist/forum.js');
                         $sources->addString(function () {
                             return "flarum.extensions['fof-sentry']=module.exports;";
                         });
