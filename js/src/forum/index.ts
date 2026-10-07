@@ -26,10 +26,18 @@ app.initializers.add(
       return;
     }
 
-    createClient(config).init();
+    const client = createClient(config);
+    client.init();
 
-    // Initializers run before the session is loaded; identify the user once it is.
-    app.beforeMount(() => setUser(getUserData()));
+    // Initializers run before the session and forum are loaded. The user needs the session, and
+    // lazy chunks need the forum, which supplies their URL.
+    app.beforeMount(() => {
+      setUser(getUserData());
+
+      if ((config.tracesSampleRate ?? 0) > 0) {
+        import('./integrations/tracing').then(({ default: tracing }) => client.addIntegration(tracing()));
+      }
+    });
   },
   // Ahead of other extensions' initializers, so errors thrown in them are captured.
   1000
