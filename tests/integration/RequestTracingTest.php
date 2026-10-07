@@ -133,4 +133,20 @@ class RequestTracingTest extends TestCase
             RecordingTransport::errors()[0]->getContexts()['trace']['trace_id'] ?? null
         );
     }
+
+    #[Test]
+    public function an_incoming_trace_from_the_browser_is_continued(): void
+    {
+        // Sent by the browser SDK on its API requests when frontend tracing is on.
+        $request = $this->request('GET', '/api')
+            ->withHeader('sentry-trace', '771a43a4192642f0b136d5159a501700-ca3e1e1eb5c4b1b8-1')
+            ->withHeader('baggage', 'sentry-trace_id=771a43a4192642f0b136d5159a501700,sentry-sampled=true');
+
+        $this->sendTraced($request);
+
+        $trace = RecordingTransport::transactions()[0]->getContexts()['trace'];
+
+        $this->assertSame('771a43a4192642f0b136d5159a501700', $trace['trace_id']);
+        $this->assertSame('ca3e1e1eb5c4b1b8', $trace['parent_span_id'] ?? null);
+    }
 }

@@ -18,8 +18,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Sentry\Tracing\TransactionContext;
 use Sentry\Tracing\TransactionSource;
+
+use function Sentry\continueTrace;
 
 /**
  * Outermost middleware of each frontend: one `http.server` transaction per request.
@@ -40,7 +41,8 @@ class TraceRequest implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        $context = new TransactionContext();
+        // Joins the browser's trace when its SDK sent trace headers; starts a new one otherwise.
+        $context = continueTrace($request->getHeaderLine('sentry-trace'), $request->getHeaderLine('baggage'));
         $context->setOp('http.server');
         $context->setName($request->getMethod().' '.$request->getUri()->getPath());
         $context->setSource(TransactionSource::url());
