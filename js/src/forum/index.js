@@ -4,6 +4,7 @@ import {
   BrowserClient,
   defaultStackParser,
   getClient,
+  setCurrentClient,
   setUser,
   makeFetchTransport,
   showReportDialog,
@@ -50,8 +51,8 @@ if (__SENTRY_SESSION_REPLAY__) {
   integrations.push(replayIntegration());
 }
 
-const createClient = (config) =>
-  new BrowserClient({
+const createClient = (config) => {
+  const client = new BrowserClient({
     dsn: config.dsn,
 
     transport: makeFetchTransport,
@@ -69,7 +70,13 @@ const createClient = (config) =>
       }
 
       if (config.showFeedback && event.exception) {
-        showReportDialog({ eventId: event.event_id, user: Sentry.getUserData('username') });
+        const { name, email } = getUserData('name');
+        const user = {};
+
+        if (name) user.name = name;
+        if (email) user.email = email;
+
+        showReportDialog({ eventId: event.event_id, user });
       }
 
       // Apply tags if provided
@@ -88,9 +95,18 @@ const createClient = (config) =>
     integrations: [...integrations, config.captureConsole && captureConsoleIntegration()].filter(Boolean),
   });
 
-window.Sentry = { createClient, getClient, setUser, showReportDialog };
+  // In @sentry/browser v10, integrations such as globalHandlers, breadcrumbs and
+  // captureConsole only act when `getClient() === client`, so the client must be
+  // bound to the current scope. The caller still runs `client.init()` afterwards.
+  setCurrentClient(client);
 
-window.Sentry.getUserData = (nameAttr = 'username') => {
+  // This runs from the page foot script after app.boot(), so the session is available.
+  setUser(getUserData());
+
+  return client;
+};
+
+const getUserData = (nameAttr = 'username') => {
   /** @type {Sentry.User} */
   let userData = {};
 
@@ -135,6 +151,4 @@ window.Sentry.getUserData = (nameAttr = 'username') => {
   return userData;
 };
 
-app.initializers.add('fof/sentry', () => {
-  setUser(Sentry.getUserData());
-});
+window.Sentry = { createClient, getClient, setUser, showReportDialog, getUserData };
