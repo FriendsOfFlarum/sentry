@@ -18,12 +18,15 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Sentry\State\HubInterface;
+use Sentry\State\Scope;
 use Sentry\Tracing\TransactionSource;
 
 use function Sentry\continueTrace;
 
 /**
- * Outermost middleware of each frontend: one `http.server` transaction per request.
+ * Outermost middleware of each frontend: tags the request's events and, with performance monitoring on,
+ * traces it as one `http.server` transaction.
  */
 class TraceRequest implements MiddlewareInterface
 {
@@ -36,8 +39,14 @@ class TraceRequest implements MiddlewareInterface
         /** @var Tracer $tracer */
         $tracer = $this->container->make(Tracer::class);
 
-        // Internal API calls (e.g. the forum's preloads) belong to the outer request's transaction.
-        if (RequestUtil::isInternal($request) || !$tracer->enabled()) {
+        // Internal API calls (e.g. the forum's preloads) belong to the outer request.
+        if (RequestUtil::isInternal($request)) {
+            return $handler->handle($request);
+        }
+
+        $this->tagScope();
+
+        if (!$tracer->enabled()) {
             return $handler->handle($request);
         }
 
@@ -60,5 +69,26 @@ class TraceRequest implements MiddlewareInterface
         } finally {
             $tracer->finishAfterResponse($transaction);
         }
+    }
+
+    /**
+     * Marks events from this request as coming from the web, and from which frontend.
+     */
+    protected function tagScope(): void
+    {
+        /** @var HubInterface $hub */
+        $hub = $this->container->make(HubInterface::class);
+
+        if ($hub->getClient() === null) {
+            return;
+        }
+
+        $hub->configureScope(function (Scope $scope) {
+            if (!$this->container->bound('sentry.stack')) {
+                $scope->setTag('stack', 'http');
+            }
+
+            $scope->setTag('frontend', $this->frontend);
+        });
     }
 }

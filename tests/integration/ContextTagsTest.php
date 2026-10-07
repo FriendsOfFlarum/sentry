@@ -12,9 +12,14 @@
 namespace FoF\Sentry\Tests\integration;
 
 use Exception;
+use Flarum\Extend;
+use Flarum\Extend\ExtenderInterface;
+use Flarum\Extension\Extension;
 use Flarum\Testing\integration\TestCase;
 use FoF\Sentry\Reporters\SentryReporter;
 use FoF\Sentry\Tests\fixtures\RecordingTransport;
+use FoF\Sentry\Tests\fixtures\ThrowingRequestHandler;
+use Illuminate\Contracts\Container\Container;
 use PHPUnit\Framework\Attributes\Test;
 use Sentry\Client;
 use Sentry\State\HubInterface;
@@ -50,5 +55,37 @@ class ContextTagsTest extends TestCase
         $this->app()->getContainer()->make(SentryReporter::class)->report(new Exception('from a worker'));
 
         $this->assertSame('cli', RecordingTransport::errors()[0]->getTags()['stack'] ?? null);
+    }
+
+    #[Test]
+    public function errors_in_a_web_request_are_tagged_with_http_and_the_frontend(): void
+    {
+        // Performance monitoring is off: these tags must not depend on tracing.
+        $this->extend((new Extend\Routes('api'))->get('/sentry-test/fail', 'sentry-test.fail', ThrowingRequestHandler::class));
+        $this->recordEvents();
+
+        $this->send($this->request('GET', '/api/sentry-test/fail'));
+
+        $tags = RecordingTransport::errors()[0]->getTags();
+
+        $this->assertSame('http', $tags['stack'] ?? null);
+        $this->assertSame('api', $tags['frontend'] ?? null);
+    }
+
+    #[Test]
+    public function an_explicit_stack_binding_wins_over_the_detected_one(): void
+    {
+        $this->extend(new class() implements ExtenderInterface {
+            public function extend(Container $container, ?Extension $extension = null): void
+            {
+                $container->instance('sentry.stack', 'octane');
+            }
+        });
+        $this->extend((new Extend\Routes('api'))->get('/sentry-test/fail', 'sentry-test.fail', ThrowingRequestHandler::class));
+        $this->recordEvents();
+
+        $this->send($this->request('GET', '/api/sentry-test/fail'));
+
+        $this->assertSame('octane', RecordingTransport::errors()[0]->getTags()['stack'] ?? null);
     }
 }
