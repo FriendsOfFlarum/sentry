@@ -19,7 +19,7 @@ A [Flarum](http://flarum.org) extension. Flarum integration for [Sentry](https:/
 ## Sentry SDK Versions
 
 - **Backend (PHP)**: Sentry PHP SDK v4.x
-- **Frontend (JavaScript)**: Sentry Browser SDK v10.0.0
+- **Frontend (JavaScript)**: Sentry Browser SDK v10.x
 
 ## Installation
 

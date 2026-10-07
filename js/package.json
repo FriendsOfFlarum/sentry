@@ -5,7 +5,7 @@
   "type": "module",
   "prettier": "@flarum/prettier-config",
   "dependencies": {
-    "@sentry/browser": "^10.31.0"
+    "@sentry/browser": "^10.76.1"
   },
   "scripts": {
     "dev": "webpack --mode development --watch",
