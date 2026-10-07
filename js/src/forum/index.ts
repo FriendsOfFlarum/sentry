@@ -1,5 +1,6 @@
+import app from 'flarum/forum/app';
 import { getClient, setUser, showReportDialog } from '@sentry/browser';
-import { createClient, getUserData } from './sentry';
+import { createClient, getUserData, type SentryConfig } from './sentry';
 
 declare global {
   interface Window {
@@ -15,3 +16,16 @@ declare global {
 }
 
 window.Sentry = { createClient, getClient, setUser, showReportDialog, getUserData };
+
+app.initializers.add(
+  'fof/sentry',
+  () => {
+    const config = app.data['fof-sentry'] as SentryConfig | undefined;
+
+    if (config?.dsn) {
+      createClient(config).init();
+    }
+  },
+  // Ahead of other extensions' initializers, so errors thrown in them are captured.
+  1000
+);
