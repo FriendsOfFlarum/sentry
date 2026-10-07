@@ -56,12 +56,12 @@ class BackendOnlyDsnTest extends TestCase
     }
 
     #[Test]
-    public function sentry_binding_is_null_with_only_a_backend_dsn(): void
+    public function sentry_binding_resolves_with_only_a_backend_dsn(): void
     {
-        // Characterisation of the inconsistency: the hub is live, but the
-        // `sentry` binding used by SentryFormatter is not. Once the DSN
-        // fallback is unified this should return a hub instead.
-        $this->assertNull($this->container()->make('sentry'));
+        $this->assertSame(
+            $this->container()->make(HubInterface::class),
+            $this->container()->make('sentry')
+        );
     }
 
     #[Test]

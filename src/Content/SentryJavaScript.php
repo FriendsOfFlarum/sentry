@@ -26,13 +26,11 @@ class SentryJavaScript
 
     public function __invoke(Document $document): void
     {
-        $useJs = (bool) (int) $this->settings->get('fof-sentry.javascript');
+        $dsn = $this->settings->get('fof-sentry.dsn');
 
-        if (!$useJs) {
+        if (!(int) $this->settings->get('fof-sentry.javascript') || !$dsn) {
             return;
         }
-
-        $dsn = $this->settings->get('fof-sentry.dsn');
 
         // Get release from container
         $release = $this->container->make('sentry.release');

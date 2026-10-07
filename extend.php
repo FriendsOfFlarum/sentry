@@ -13,12 +13,7 @@ namespace FoF\Sentry;
 
 use Flarum\Extend as Flarum;
 use Flarum\Frontend\Document;
-use Flarum\Frontend\RecompileFrontendAssets;
-use Flarum\Locale\LocaleManager;
-use Flarum\Settings\Event\Saved;
 use FoF\Sentry\Middleware\HandleErrorsWithSentry;
-use Illuminate\Container\Container;
-use Illuminate\Support\Str;
 
 return [
     (new Flarum\ServiceProvider())
@@ -46,23 +41,13 @@ return [
     (new Flarum\Middleware('api'))
         ->add(HandleErrorsWithSentry::class),
 
-    (new Flarum\Event())
-        ->listen(Saved::class, function (Saved $event) {
-            foreach ($event->settings as $key => $setting) {
-                if (Str::startsWith($key, 'fof-sentry.javascript')) {
-                    $container = Container::getInstance();
-                    $recompile = new RecompileFrontendAssets(
-                        $container->make('flarum.assets.forum'),
-                        $container->make(LocaleManager::class)
-                    );
-                    $recompile->flush();
-
-                    return;
-                }
-            }
-        }),
-
+    // These settings decide whether, and which variant of, the Sentry bundle is compiled into forum.js.
     (new Flarum\Settings())
+        ->resetJsCacheFor('fof-sentry.dsn')
+        ->resetJsCacheFor('fof-sentry.javascript')
+        ->resetJsCacheFor('fof-sentry.javascript.trace_sample_rate')
+        ->resetJsCacheFor('fof-sentry.javascript.replays_session_sample_rate')
+        ->resetJsCacheFor('fof-sentry.javascript.replays_error_sample_rate')
         ->default('fof-sentry.dsn', '')
         ->default('fof-sentry.dsn_backend', '')
         ->default('fof-sentry.environment', '')

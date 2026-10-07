@@ -25,12 +25,16 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use FoF\Sentry\Contracts\Measure;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Reporters\SentryReporter;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Arr;
+use Sentry\Event;
+use Sentry\EventHint;
 use Sentry\SentrySdk;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
 use Sentry\Tracing\Transaction;
 use Sentry\Tracing\TransactionContext;
+use Sentry\UserDataBag;
 
 use function Sentry\init;
 
@@ -69,16 +73,10 @@ class SentryServiceProvider extends AbstractServiceProvider
             /** @var SettingsRepositoryInterface $settings */
             $settings = $container->make(SettingsRepositoryInterface::class);
 
-            // Check for DSN - try backend-specific first, then fall back to general DSN
-            $dsn = $settings->get('fof-sentry.dsn_backend');
-            if (empty($dsn)) {
-                $dsn = $settings->get('fof-sentry.dsn');
-            }
+            $dsn = static::backendDsn($settings);
 
-            // If no DSN is configured, don't initialize Sentry
-            if (empty($dsn)) {
-                // Return the current hub without initialization
-                // This will be a no-op hub that doesn't send events
+            // Without a DSN the SDK is never initialised; the current hub has no client and drops everything.
+            if ($dsn === null) {
                 return SentrySdk::getCurrentHub();
             }
 
@@ -111,6 +109,7 @@ class SentryServiceProvider extends AbstractServiceProvider
                 'profiles_sample_rate'  => $profilesSampleRate,
                 'environment'           => $environment,
                 'release'               => $release,
+                'before_send'           => [static::class, 'beforeSend'],
             ];
 
             // Merge with custom config
@@ -121,35 +120,32 @@ class SentryServiceProvider extends AbstractServiceProvider
 
             init($config);
 
-            return SentrySdk::getCurrentHub();
-        });
+            $hub = SentrySdk::getCurrentHub();
 
-        $this->container->singleton('sentry', function ($container) {
-            /** @var SettingsRepositoryInterface $settings */
-            $settings = $container->make(SettingsRepositoryInterface::class);
+            /** @var Config $flarumConfig */
+            $flarumConfig = $container->make('flarum.config');
 
-            $dsn = $settings->get('fof-sentry.dsn');
-            if (!$dsn) {
-                return null;
-            }
-
-            /** @var Config $config */
-            $config = $container->make('flarum.config');
-
-            /** @var HubInterface $hub */
-            $hub = $this->container->make(HubInterface::class);
-
-            $hub->configureScope(function (Scope $scope) use ($config) {
-                $scope->setTag('offline', $this->booleanToString(Arr::get($config, 'offline', false)));
-                $scope->setTag('debug', $this->booleanToString(Arr::get($config, 'debug', true)));
+            $hub->configureScope(function (Scope $scope) use ($container, $flarumConfig) {
+                $scope->setTag('offline', $this->booleanToString((bool) Arr::get($flarumConfig, 'offline', false)));
+                $scope->setTag('debug', $this->booleanToString($flarumConfig->inDebugMode()));
                 $scope->setTag('flarum', Application::VERSION);
 
-                if ($this->container->bound('sentry.stack')) {
-                    $scope->setTag('stack', $this->container->make('sentry.stack'));
+                if ($container->bound('sentry.stack')) {
+                    $scope->setTag('stack', $container->make('sentry.stack'));
                 }
+
+                $scope->addEventProcessor(fn (Event $event) => static::attachUser($event, $container));
             });
 
             return $hub;
+        });
+
+        $this->container->singleton('sentry', function ($container) {
+            if (static::backendDsn($container->make(SettingsRepositoryInterface::class)) === null) {
+                return null;
+            }
+
+            return $container->make(HubInterface::class);
         });
 
         $this->container->singleton(ViewFormatter::class, SentryFormatter::class);
@@ -160,9 +156,10 @@ class SentryServiceProvider extends AbstractServiceProvider
         $this->container->resolving(
             'flarum.assets.forum',
             function (Assets $assets) {
-                $useJs = (int) resolve('flarum.settings')->get('fof-sentry.javascript');
+                $settings = resolve('flarum.settings');
 
-                if ($useJs) {
+                // Without a public DSN the browser client is disabled, so don't ship the SDK at all.
+                if ((int) $settings->get('fof-sentry.javascript') && $settings->get('fof-sentry.dsn')) {
                     $assets->js(function (SourceCollector $sources) {
                         $sources->addString(function () {
                             return 'var module={};';
@@ -197,55 +194,81 @@ class SentryServiceProvider extends AbstractServiceProvider
 
     public function boot(SettingsRepositoryInterface $settings): void
     {
-        set_error_handler([$this, 'handleError']);
-
-        $dsn = $settings->get('fof-sentry.dsn');
-        $performanceMonitoring = (int) $settings->get('fof-sentry.monitor_performance');
-
-        if ($dsn && $performanceMonitoring > 0) {
-            /** @var HubInterface $hub */
-            $hub = $this->container->make(HubInterface::class);
-
-            $transaction = $hub->startTransaction(new TransactionContext('flarum'));
-
-            // Use the measurements from the container
-            $measurements = $this->container->make('fof.sentry.measurements');
-
-            foreach ($measurements as $measurement) {
-                /** @var Measure $measure */
-                $measure = new $measurement($transaction, $this->container);
-                if ($span = $measure->handle()) {
-                    static::$transactionStack[] = $span;
-                }
-            }
-
-            static::$transactionStack[] = $transaction;
+        if (static::backendDsn($settings) === null) {
+            return;
         }
+
+        // Initialise now rather than on first error, so the SDK's own handlers are in place
+        // for uncaught exceptions, PHP warnings and fatal errors from the start of the request.
+        /** @var HubInterface $hub */
+        $hub = $this->container->make(HubInterface::class);
+
+        if ((int) $settings->get('fof-sentry.monitor_performance') <= 0) {
+            return;
+        }
+
+        $transaction = $hub->startTransaction(new TransactionContext('flarum'));
+
+        // Unsampled transactions are never sent, so skip all measurement work for them.
+        if (!$transaction->getSampled()) {
+            return;
+        }
+
+        $measurements = $this->container->make('fof.sentry.measurements');
+
+        foreach ($measurements as $measurement) {
+            /** @var Measure $measure */
+            $measure = new $measurement($transaction, $this->container);
+            if ($span = $measure->handle()) {
+                static::$transactionStack[] = $span;
+            }
+        }
+
+        static::$transactionStack[] = $transaction;
     }
 
-    public function handleError(int $level, string $message, string $file = '', int $line = 0): bool
+    /**
+     * The DSN the backend reports to: the backend-only DSN when set, otherwise the general one.
+     */
+    public static function backendDsn(SettingsRepositoryInterface $settings): ?string
     {
-        // ignore STMT_PREPARE errors because Eloquent automatically tries reconnecting
-        if (strpos($message, 'STMT_PREPARE packet') !== false) {
-            return false;
+        $dsn = $settings->get('fof-sentry.dsn_backend') ?: $settings->get('fof-sentry.dsn');
+
+        return $dsn ? (string) $dsn : null;
+    }
+
+    /**
+     * Eloquent reconnects transparently after a dropped MySQL connection, but PDO
+     * still raises a warning for the failed STMT_PREPARE first. That is noise.
+     */
+    public static function beforeSend(Event $event, ?EventHint $hint): ?Event
+    {
+        $exception = $hint?->exception;
+
+        if ($exception instanceof ErrorException && str_contains($exception->getMessage(), 'STMT_PREPARE packet')) {
+            return null;
         }
 
-        if (error_reporting() & $level) {
-            $error = new ErrorException($message, 0, $level, $file, $line);
+        return $event;
+    }
 
-            if (resolve(Config::class)->inDebugMode()) {
-                throw $error;
-            } else {
-                foreach ($this->container->tagged(Reporter::class) as $reporter) {
-                    /**
-                     * @var SentryReporter $reporter
-                     */
-                    $reporter->report($error);
-                }
-            }
+    /**
+     * Builds user context only when an event is actually sent, from the request
+     * bound by HandleErrorsWithSentry. A user set explicitly on the scope wins.
+     */
+    public static function attachUser(Event $event, Container $container): Event
+    {
+        if ($event->getUser() !== null || !$container->bound('sentry.request')) {
+            return $event;
         }
 
-        return false;
+        $data = $container->make(UserContext::class)->fromRequest($container->make('sentry.request'));
+
+        if (!empty($data)) {
+            $event->setUser(UserDataBag::createFromArray($data));
+        }
+
+        return $event;
     }
 
     public function __destruct()

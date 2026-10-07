@@ -17,6 +17,7 @@ use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Sentry\State\HubInterface;
 
 class SentryFormatter extends ViewFormatter
 {
@@ -24,38 +25,33 @@ class SentryFormatter extends ViewFormatter
     {
         $response = parent::format($error, $request);
 
-        /** @var SettingsRepositoryInterface */
+        /** @var SettingsRepositoryInterface $settings */
         $settings = resolve(SettingsRepositoryInterface::class);
-        $sentry = resolve('sentry');
 
-        if (!$error->shouldBeReported() || $sentry == null || $sentry->getLastEventId() == null || !((bool) (int) $settings->get('fof-sentry.user_feedback'))) {
+        if (!$error->shouldBeReported() || !((bool) (int) $settings->get('fof-sentry.user_feedback'))) {
             return $response;
         }
 
+        // The dialog runs in the visitor's browser, so it always uses the primary DSN: the
+        // backend DSN may be a Relay that only the server can reach. A Relay DSN shares the
+        // primary DSN's project, so the feedback still attaches to the backend event.
         $dsn = $settings->get('fof-sentry.dsn');
-        $user = RequestUtil::getActor(resolve('sentry.request'));
-        $locale = $this->translator->getLocale();
-        $eventId = $sentry->getLastEventId();
+        $eventId = resolve(HubInterface::class)->getLastEventId();
 
-        // Build user data with proper escaping to prevent XSS
+        if (!$dsn || $eventId === null) {
+            return $response;
+        }
+
+        $user = RequestUtil::getActor($request);
         $userData = '';
-        if ($user != null && $user->id != 0) {
+
+        if (!$user->isGuest()) {
             $userDataArray = [
-                'name' => $user->username,
+                'name' => $user->display_name,
             ];
 
-            // Only include email if setting is enabled
             if ((bool) $settings->get('fof-sentry.send_emails_with_sentry_reports')) {
                 $userDataArray['email'] = $user->email;
-            }
-
-            // Add user groups
-            if (!$user->relationLoaded('groups')) {
-                $user->load('groups');
-            }
-            $groups = $user->groups->pluck('name_singular')->filter()->all();
-            if (!empty($groups)) {
-                $userDataArray['groups'] = implode(', ', $groups);
             }
 
             // JSON encode for safe JavaScript embedding
@@ -63,11 +59,10 @@ class SentryFormatter extends ViewFormatter
             $userData = "user: $userDataJson,";
         }
 
-        // JSON encode all values for safe JavaScript embedding
         $configJson = json_encode([
-            'dsn'     => $dsn,
-            'lang'    => $locale,
-            'eventId' => $eventId,
+            'dsn'     => (string) $dsn,
+            'lang'    => $this->translator->getLocale(),
+            'eventId' => (string) $eventId,
         ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         $body = $response->getBody();
