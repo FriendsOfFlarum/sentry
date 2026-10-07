@@ -12,9 +12,11 @@
 namespace FoF\Sentry\Tests\integration;
 
 use Flarum\Testing\integration\TestCase;
+use FoF\Sentry\Tests\fixtures\FailingJob;
 use FoF\Sentry\Tests\fixtures\RecordingTransport;
 use FoF\Sentry\Tests\fixtures\TracedJob;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Sentry\Client;
 use Sentry\State\HubInterface;
 
@@ -54,5 +56,27 @@ class QueueTracingTest extends TestCase
         $this->assertCount(1, $transactions);
         $this->assertSame('queue.process', $transactions[0]->getContexts()['trace']['op'] ?? null);
         $this->assertSame(TracedJob::class, $transactions[0]->getTransaction());
+    }
+
+    #[Test]
+    public function consecutive_jobs_are_separate_transactions(): void
+    {
+        // A worker runs job after job in one process; the second must not nest under the first.
+        $this->runJob(new TracedJob());
+        $this->runJob(new TracedJob());
+
+        $this->assertCount(2, RecordingTransport::transactions());
+    }
+
+    #[Test]
+    public function a_failing_job_is_marked_as_failed(): void
+    {
+        try {
+            $this->runJob(new FailingJob());
+        } catch (RuntimeException) {
+            // The sync driver rethrows; the transaction is what's under test.
+        }
+
+        $this->assertSame('internal_error', RecordingTransport::transactions()[0]->getContexts()['trace']['status'] ?? null);
     }
 }
