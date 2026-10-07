@@ -22,6 +22,8 @@ return [
 
     (new Flarum\Frontend('forum'))
         ->css(__DIR__.'/resources/less/forum.less')
+        // The tracing and replay chunks the forum bundle loads on demand.
+        ->jsDirectory(__DIR__.'/js/dist/forum')
         ->content(Content\SentryJavaScript::class),
 
     (new Flarum\Frontend('admin'))
@@ -48,13 +50,10 @@ return [
     (new Flarum\Event())
         ->subscribe(Tracing\TraceQueueJobs::class),
 
-    // These settings decide whether, and which variant of, the Sentry bundle is compiled into forum.js.
+    // These settings decide whether the Sentry bundle is compiled into forum.js at all.
     (new Flarum\Settings())
         ->resetJsCacheFor('fof-sentry.dsn')
         ->resetJsCacheFor('fof-sentry.javascript')
-        ->resetJsCacheFor('fof-sentry.javascript.trace_sample_rate')
-        ->resetJsCacheFor('fof-sentry.javascript.replays_session_sample_rate')
-        ->resetJsCacheFor('fof-sentry.javascript.replays_error_sample_rate')
         ->default('fof-sentry.dsn', '')
         ->default('fof-sentry.dsn_backend', '')
         ->default('fof-sentry.environment', '')

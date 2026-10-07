@@ -12,7 +12,7 @@ fof-sentry:
       database_monitoring: Database Query Monitoring
       database_monitoring_help: Monitor database query performance, detect slow queries and N+1 issues. Only active when backend performance monitoring is enabled.
       frontend_monitoring: Frontend (JavaScript) Monitoring
-      frontend_monitoring_help: Track JavaScript errors and frontend performance. Note that enabling certain features increases bundle size.
+      frontend_monitoring_help: Track JavaScript errors and frontend performance. Tracing and session replay are separate downloads, fetched only when enabled.
 
     settings:
       dsn_label: Sentry DSN
@@ -36,11 +36,11 @@ fof-sentry:
       javascript_console_label: Capture Console Messages as Breadcrumbs
       javascript_console_help: 'Record console.log, console.info, console.warn, and console.error calls as breadcrumbs. See the sequence of events leading to an error and debug complex user interactions. Note: Increases data volume. Use selectively in production.'
       javascript_trace_sample_rate: Frontend Performance Monitoring Sample Rate
-      javascript_trace_sample_rate_help: 'Percentage of page loads to trace (0 = disabled, 100 = trace all). Tracks page load times, resource loading, API requests, and navigation timing. Bundle size: Adds ~30 KB. Recommendation: Use 10-25% in production.'
+      javascript_trace_sample_rate_help: 'Percentage of page loads to trace (0 = disabled, 100 = trace all). Tracks page load times, resource loading, API requests, and navigation timing. Download: ~21 KB (gzipped), fetched only while this is above 0. Recommendation: Use 10-25% in production.'
       javascript_replays_session_sample_rate: Session Replay Sample Rate
-      javascript_replays_session_sample_rate_help: 'Percentage of user sessions to record from the beginning. Captures mouse movements, clicks, scrolling, navigation, and form interactions (with PII masking). Watch exactly what users did to reproduce bugs. Bundle size: Adds ~150 KB. Recommendation: Use 1-5% in production due to storage costs.'
+      javascript_replays_session_sample_rate_help: 'Percentage of user sessions to record from the beginning. Captures mouse movements, clicks, scrolling, navigation, and form interactions (with PII masking). Watch exactly what users did to reproduce bugs. Download: ~44 KB (gzipped), shared with error replays and fetched only while either is above 0. Recommendation: Use 1-5% in production due to storage costs.'
       javascript_replays_error_sample_rate: Error-Triggered Replay Sample Rate
-      javascript_replays_error_sample_rate_help: 'Percentage of sessions to record only when an error occurs. More efficient than full session replays - records up to 1 minute before the error and continues until session ends. Perfect for debugging production issues. Bundle size: Adds ~150 KB. Recommendation: Use 10-25% in production.'
+      javascript_replays_error_sample_rate_help: 'Percentage of sessions to record only when an error occurs. More efficient than full session replays - records up to 1 minute before the error and continues until session ends. Perfect for debugging production issues. Download: ~44 KB (gzipped), shared with session replays and fetched only while either is above 0. Recommendation: Use 10-25% in production.'
 
       db_slow_query_threshold_label: Slow Query Threshold (milliseconds)
       db_slow_query_threshold_help: 'Queries taking longer than this threshold (in milliseconds) are flagged as slow and automatically tracked regardless of sample rate. Severity levels: Medium (1-2× threshold), High (2-5× threshold), Critical (5×+ threshold). Default: 1000ms (1 second). Lower to 500ms for more aggressive detection.'

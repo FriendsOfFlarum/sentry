@@ -1,9 +1,7 @@
 import app from 'flarum/forum/app';
-
 import {
   BrowserClient,
   defaultStackParser,
-  getClient,
   setCurrentClient,
   setUser,
   makeFetchTransport,
@@ -15,12 +13,29 @@ import {
   linkedErrorsIntegration,
   httpContextIntegration,
   dedupeIntegration,
-  browserTracingIntegration,
-  replayIntegration,
   captureConsoleIntegration,
 } from '@sentry/browser';
+import type { User } from '@sentry/browser';
 
-const integrations = [
+type Integration = NonNullable<ConstructorParameters<typeof BrowserClient>[0]['integrations']>[number];
+
+/**
+ * The browser configuration the backend puts in the forum payload (see SentryJavaScript.php).
+ */
+export interface SentryConfig {
+  dsn: string;
+  environment?: string;
+  release?: string;
+  scrubEmails?: boolean;
+  showFeedback?: boolean;
+  captureConsole?: boolean;
+  tracesSampleRate?: number;
+  replaysSessionSampleRate?: number;
+  replaysOnErrorSampleRate?: number;
+  tags?: Record<string, string>;
+}
+
+const integrations: Integration[] = [
   eventFiltersIntegration(),
   functionToStringIntegration(),
   dedupeIntegration(),
@@ -43,22 +58,48 @@ const integrations = [
   httpContextIntegration(),
 ];
 
-if (__SENTRY_TRACING__) {
-  integrations.push(browserTracingIntegration());
+export function getUserData(nameAttr = 'username'): User {
+  const user = app.session?.user;
+
+  if (user && Number(user.id()) !== 0) {
+    const userData: User = {
+      ip_address: '{{auto}}',
+      id: user.id(),
+      [nameAttr]: user.displayName(),
+    };
+
+    if (user.displayName() !== user.username()) {
+      userData.username_slug = user.username();
+    }
+
+    if (!app.data['fof-sentry.scrub-emails']) {
+      userData.email = user.email();
+    }
+
+    const groups = (user.groups() || [])
+      .map((group) => group?.nameSingular())
+      .filter(Boolean)
+      .join(', ');
+
+    if (groups) {
+      userData.groups = groups;
+    }
+
+    return userData;
+  }
+
+  const userId = app.data.session?.userId;
+
+  return userId && Number(userId) !== 0 ? { id: userId } : {};
 }
 
-if (__SENTRY_SESSION_REPLAY__) {
-  integrations.push(replayIntegration());
-}
-
-const createClient = (config) => {
+export function createClient(config: SentryConfig): BrowserClient {
   const client = new BrowserClient({
     dsn: config.dsn,
 
     transport: makeFetchTransport,
     stackParser: defaultStackParser,
 
-    // Add environment and release from config
     environment: config.environment,
     release: config.release,
 
@@ -71,7 +112,7 @@ const createClient = (config) => {
 
       if (config.showFeedback && event.exception) {
         const { name, email } = getUserData('name');
-        const user = {};
+        const user: { name?: string; email?: string } = {};
 
         if (name) user.name = name;
         if (email) user.email = email;
@@ -79,10 +120,8 @@ const createClient = (config) => {
         showReportDialog({ eventId: event.event_id, user });
       }
 
-      // Apply tags if provided
       if (config.tags) {
-        if (!event.tags) event.tags = {};
-        Object.assign(event.tags, config.tags);
+        event.tags = { ...event.tags, ...config.tags };
       }
 
       return event;
@@ -92,7 +131,7 @@ const createClient = (config) => {
     replaysSessionSampleRate: config.replaysSessionSampleRate,
     replaysOnErrorSampleRate: config.replaysOnErrorSampleRate,
 
-    integrations: [...integrations, config.captureConsole && captureConsoleIntegration()].filter(Boolean),
+    integrations: config.captureConsole ? [...integrations, captureConsoleIntegration()] : integrations,
   });
 
   // In @sentry/browser v10, integrations such as globalHandlers, breadcrumbs and
@@ -100,55 +139,8 @@ const createClient = (config) => {
   // bound to the current scope. The caller still runs `client.init()` afterwards.
   setCurrentClient(client);
 
-  // This runs from the page foot script after app.boot(), so the session is available.
+  // Covers callers that create a client after boot; at boot the initializer sets the user once the session exists.
   setUser(getUserData());
 
   return client;
-};
-
-const getUserData = (nameAttr = 'username') => {
-  /** @type {Sentry.User} */
-  let userData = {};
-
-  // Depending on when the error occurs, `app` might not be defined
-  if (app) {
-    const user = app.session?.user;
-
-    if (app.session && user && user.id() != 0) {
-      userData = {
-        ip_address: '{{auto}}',
-        id: user.id(),
-        [nameAttr]: user.displayName(),
-      };
-
-      if (user.displayName() !== user.username()) {
-        userData.username_slug = user.username();
-      }
-
-      if (!app.data['fof-sentry.scrub-emails']) {
-        userData.email = user.email();
-      }
-
-      // Add user groups if available
-      if (user.groups && user.groups()) {
-        const groups = user
-          .groups()
-          .map((group) => group.nameSingular())
-          .filter(Boolean)
-          .join(', ');
-
-        if (groups) {
-          userData.groups = groups;
-        }
-      }
-    } else if (app.data.session && app.data.session.userId != 0) {
-      userData = {
-        id: app.data.session.userId,
-      };
-    }
-  }
-
-  return userData;
-};
-
-window.Sentry = { createClient, getClient, setUser, showReportDialog, getUserData };
+}

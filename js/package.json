@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
+    "analyze": "ANALYZER=true yarn build",
     "format": "prettier --write src",
     "format-check": "prettier --check src",
     "clean-typings": "npx rimraf dist-typings && mkdir dist-typings",
@@ -28,7 +29,6 @@
     "typescript": "^5.9.3",
     "typescript-coverage-report": "^2.1.2",
     "webpack": "^5.104.1",
-    "webpack-bundle-analyzer": "^4.9.0",
     "webpack-cli": "^5.1.4"
   }
 }
