@@ -99,7 +99,11 @@ class SentryServiceProvider extends AbstractServiceProvider
             // Base configuration
             $config = [
                 'dsn'                   => $dsn,
+                // Everything under the install counts as application code, upstream libraries included, so their
+                // frames are expanded and used for grouping. Sites can refine this with Sentry's stack trace rules.
                 'in_app_include'        => [$paths->base],
+                // Show file names relative to the install, e.g. /vendor/flarum/core/src/... .
+                'prefixes'              => [$paths->base],
                 'traces_sample_rate'    => $tracesSampleRate,
                 'profiles_sample_rate'  => $profilesSampleRate,
                 'environment'           => $environment,
