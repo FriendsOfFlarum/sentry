@@ -12,6 +12,7 @@
 namespace FoF\Sentry\Tests\integration;
 
 use Exception;
+use Flarum\Extend;
 use Flarum\Foundation\ErrorHandling\HandledError;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Http\RequestUtil;
@@ -21,6 +22,8 @@ use Flarum\User\Guest;
 use Flarum\User\User;
 use FoF\Sentry\Reporters\SentryReporter;
 use FoF\Sentry\SentryServiceProvider;
+use FoF\Sentry\Tests\fixtures\MarkingViewFormatter;
+use FoF\Sentry\Tests\fixtures\ReplacesViewFormatter;
 use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\AbstractLogger;
@@ -233,5 +236,20 @@ class ErrorHandlingTest extends TestCase
 
         $this->assertStringNotContainsString('Sentry.createClient', $html);
         $this->assertStringNotContainsString('"fof-sentry"', $html);
+    }
+
+    #[Test]
+    public function the_feedback_dialog_coexists_with_another_extensions_error_page(): void
+    {
+        $this->extend((new Extend\ServiceProvider())->register(ReplacesViewFormatter::class));
+
+        $this->setting('fof-sentry.dsn', 'https://public@example.ingest.sentry.io/1');
+        $this->setting('fof-sentry.user_feedback', true);
+        $this->recordingHub();
+
+        $body = $this->formatReported(new Exception('boom'), $this->requestAs(null));
+
+        $this->assertStringContainsString(MarkingViewFormatter::MARKER, $body);
+        $this->assertStringContainsString('showReportDialog', $body);
     }
 }

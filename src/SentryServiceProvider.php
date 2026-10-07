@@ -21,6 +21,7 @@ use Flarum\Foundation\Paths;
 use Flarum\Frontend\Assets;
 use Flarum\Frontend\Compiler\Source\SourceCollector;
 use Flarum\Http\UrlGenerator;
+use Flarum\Locale\TranslatorInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Middleware\TraceRequest;
@@ -28,6 +29,7 @@ use FoF\Sentry\Reporters\SentryReporter;
 use FoF\Sentry\Tracing\AfterResponse;
 use FoF\Sentry\Tracing\Tracer;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Arr;
 use Sentry\Event;
 use Sentry\EventHint;
@@ -161,7 +163,15 @@ class SentryServiceProvider extends AbstractServiceProvider
             });
         }
 
-        $this->container->singleton(ViewFormatter::class, SentryFormatter::class);
+        // Wrap rather than rebind, so another extension customising the error page keeps working alongside us.
+        $this->container->extend(ViewFormatter::class, function (ViewFormatter $inner, Container $container) {
+            return $inner instanceof SentryFormatter ? $inner : new SentryFormatter(
+                $inner,
+                $container->make(ViewFactory::class),
+                $container->make(TranslatorInterface::class),
+                $container->make(SettingsRepositoryInterface::class)
+            );
+        });
 
         $this->container->tag(SentryReporter::class, Reporter::class);
 
