@@ -35,6 +35,9 @@ return [
 
     new Flarum\Locales(__DIR__.'/resources/locale'),
 
+    (new Flarum\ErrorHandling())
+        ->reporter(Reporters\SentryReporter::class),
+
     (new Flarum\Middleware('forum'))
         ->add(HandleErrorsWithSentry::class)
         ->add(NameTransaction::class),

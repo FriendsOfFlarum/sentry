@@ -15,7 +15,6 @@ use ErrorException;
 use Flarum\Foundation\AbstractServiceProvider;
 use Flarum\Foundation\Application;
 use Flarum\Foundation\Config;
-use Flarum\Foundation\ErrorHandling\Reporter;
 use Flarum\Foundation\ErrorHandling\ViewFormatter;
 use Flarum\Foundation\Paths;
 use Flarum\Frontend\Assets;
@@ -25,7 +24,6 @@ use Flarum\Locale\TranslatorInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
 use FoF\Sentry\Formatters\SentryFormatter;
 use FoF\Sentry\Middleware\TraceRequest;
-use FoF\Sentry\Reporters\SentryReporter;
 use FoF\Sentry\Tracing\AfterResponse;
 use FoF\Sentry\Tracing\Tracer;
 use Illuminate\Contracts\Container\Container;
@@ -173,7 +171,6 @@ class SentryServiceProvider extends AbstractServiceProvider
             );
         });
 
-        $this->container->tag(SentryReporter::class, Reporter::class);
 
         // js assets
         $this->container->resolving(
