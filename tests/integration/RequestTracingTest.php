@@ -14,6 +14,7 @@ namespace FoF\Sentry\Tests\integration;
 use Flarum\Testing\integration\TestCase;
 use FoF\Sentry\Tests\fixtures\RecordingTransport;
 use FoF\Sentry\Tracing\AfterResponse;
+use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -59,5 +60,32 @@ class RequestTracingTest extends TestCase
 
         $this->assertCount(1, $transactions);
         $this->assertSame('http.server', $transactions[0]->getContexts()['trace']['op'] ?? null);
+    }
+
+    #[Test]
+    public function the_transaction_records_the_response_status(): void
+    {
+        $this->sendTraced($this->request('GET', '/api/discussions/999999'));
+
+        $this->assertSame('not_found', RecordingTransport::transactions()[0]->getContexts()['trace']['status'] ?? null);
+    }
+
+    #[Test]
+    public function the_transaction_is_tagged_with_its_frontend(): void
+    {
+        $this->sendTraced($this->request('GET', '/api'));
+
+        $this->assertSame('api', RecordingTransport::transactions()[0]->getTags()['frontend'] ?? null);
+    }
+
+    #[Test]
+    public function the_transaction_starts_when_php_received_the_request(): void
+    {
+        // Covers Flarum's bootstrap, which runs before any middleware.
+        $receivedAt = microtime(true) - 2.5;
+
+        $this->sendTraced(new ServerRequest(['REQUEST_TIME_FLOAT' => $receivedAt], [], '/api', 'GET'));
+
+        $this->assertEqualsWithDelta($receivedAt, RecordingTransport::transactions()[0]->getStartTimestamp(), 0.001);
     }
 }
