@@ -100,4 +100,22 @@ class RequestTracingTest extends TestCase
         $this->assertCount(1, $transactions);
         $this->assertSame('forum', $transactions[0]->getTags()['frontend'] ?? null);
     }
+
+    #[Test]
+    public function the_transaction_is_named_after_the_matched_route(): void
+    {
+        // Named by route rather than URL, so /api/discussions/1 and /api/discussions/2 group together.
+        $this->sendTraced($this->request('GET', '/api/discussions/999999'));
+
+        $this->assertSame('GET api.discussions.show', RecordingTransport::transactions()[0]->getTransaction());
+    }
+
+    #[Test]
+    public function internal_api_calls_do_not_rename_the_page_transaction(): void
+    {
+        $this->sendTraced($this->request('GET', '/'));
+
+        // `/` is served by Flarum's configurable default route, which is named "default".
+        $this->assertSame('GET forum.default', RecordingTransport::transactions()[0]->getTransaction());
+    }
 }
