@@ -76,6 +76,11 @@ class SentryJavaScript
             ],
         ];
 
+        // Send the browser's events through the forum (see Http\TunnelController).
+        if ((int) $this->settings->get('fof-sentry.javascript.tunnel')) {
+            $config['tunnel'] = $this->url->to('forum')->route('fof-sentry.tunnel');
+        }
+
         // Retrieve custom tags if they exist
         if ($this->container->bound('fof.sentry.tags')) {
             $customTags = $this->container->make('fof.sentry.tags');

@@ -58,6 +58,18 @@ describe('createClient', () => {
     expect(sentry.getClient()).toBe(client);
   });
 
+  it('passes the tunnel through to the SDK', () => {
+    const client = sentry.createClient({ ...baseConfig, tunnel: 'https://forum.example/sentry/tunnel' });
+
+    expect(client.getOptions().tunnel).toBe('https://forum.example/sentry/tunnel');
+  });
+
+  it('leaves the tunnel unset when there is none', () => {
+    const client = sentry.createClient(baseConfig);
+
+    expect(client.getOptions().tunnel).toBeUndefined();
+  });
+
   it('still allows the foot script to call init()', () => {
     const client = sentry.createClient(baseConfig);
 
