@@ -76,7 +76,12 @@ class TunnelController implements RequestHandlerInterface
             return new EmptyResponse(400);
         }
 
-        $headers = ['Content-Type' => 'application/x-sentry-envelope'];
+        $headers = [
+            'Content-Type' => 'application/x-sentry-envelope',
+            // Sentry reads the key from the envelope header, but some compatible
+            // servers (GlitchTip) only from the request, as the SDKs send it.
+            'X-Sentry-Auth' => 'Sentry sentry_version=7, sentry_client=fof-sentry-tunnel, sentry_key='.$dsn->getPublicKey(),
+        ];
 
         // Without this every browser event would carry the forum server's IP.
         if ($ip = $request->getAttribute('ipAddress')) {

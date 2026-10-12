@@ -97,6 +97,7 @@ class TunnelTest extends TestCase
         $this->assertSame('https://example.ingest.sentry.io/api/1/envelope/', (string) $forwarded->getUri());
         $this->assertSame($body, (string) $forwarded->getBody());
         $this->assertSame('application/x-sentry-envelope', $forwarded->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('sentry_key=public', $forwarded->getHeaderLine('X-Sentry-Auth'));
         // The visitor's address, not the forum server's.
         $this->assertNotSame('', $forwarded->getHeaderLine('X-Forwarded-For'));
     }
