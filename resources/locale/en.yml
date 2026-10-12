@@ -33,6 +33,8 @@ fof-sentry:
 
       javascript_label: Enable JavaScript Error Reporting
       javascript_help: Capture and report JavaScript errors from your forum's frontend to Sentry. Tracks uncaught exceptions, promise rejections, console errors, and network failures. Disable this if you only want backend error tracking.
+      javascript_tunnel_label: Send Browser Events Through the Forum
+      javascript_tunnel_help: 'Visitors'' browsers send their reports to this forum, which forwards them to your DSN, instead of contacting the DSN''s host directly. Turn this on when your Sentry server is not reachable from the internet (for example a self-hosted one on a private network), or to keep ad blockers from dropping reports. The forum forwards only to the configured DSN.'
       javascript_console_label: Capture Console Messages as Breadcrumbs
       javascript_console_help: 'Record console.log, console.info, console.warn, and console.error calls as breadcrumbs. See the sequence of events leading to an error and debug complex user interactions. Note: Increases data volume. Use selectively in production.'
       javascript_trace_sample_rate: Frontend Performance Monitoring Sample Rate

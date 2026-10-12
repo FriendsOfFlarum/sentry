@@ -138,6 +138,14 @@ Percentage of traced transactions to profile. This is **relative to the performa
 
 Enable JavaScript error reporting to Sentry. Disable this if you only want backend error tracking.
 
+#### Send Browser Events Through the Forum (Tunnel)
+**Setting**: `fof-sentry.javascript.tunnel`
+**Default**: `false`
+
+Visitors' browsers post their reports to the forum (`POST /sentry/tunnel`), and the forum forwards them to the DSN, instead of the browser contacting the DSN's host directly. Turn this on when your Sentry server is not reachable from the internet, for example a self-hosted Sentry or a Sentry-compatible server on a private network, or to keep ad blockers from dropping reports.
+
+The forum forwards only to the configured DSN's project: an envelope addressed to any other host, project or key is refused, so the route cannot be used to relay anything elsewhere. Each forwarded report carries the visitor's IP as `X-Forwarded-For`.
+
 #### Capture JavaScript Console
 **Setting**: `fof-sentry.javascript.console`
 **Default**: `false`

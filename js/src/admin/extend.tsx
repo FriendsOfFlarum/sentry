@@ -243,6 +243,17 @@ export default [
     )
     .setting(
       (): SentrySettingConfig => ({
+        setting: 'fof-sentry.javascript.tunnel',
+        type: 'boolean',
+        label: app.translator.trans('fof-sentry.admin.settings.javascript_tunnel_label'),
+        help: app.translator.trans('fof-sentry.admin.settings.javascript_tunnel_help'),
+        visible: javascriptEnabled,
+        tree: frontendMonitoringTree(),
+      }),
+      585
+    )
+    .setting(
+      (): SentrySettingConfig => ({
         setting: 'fof-sentry.javascript.console',
         type: 'boolean',
         label: app.translator.trans('fof-sentry.admin.settings.javascript_console_label'),

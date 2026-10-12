@@ -33,6 +33,8 @@ export interface SentryConfig {
   replaysSessionSampleRate?: number;
   replaysOnErrorSampleRate?: number;
   tags?: Record<string, string>;
+  /** The forum's own tunnel route, when events should reach the DSN through the forum. */
+  tunnel?: string;
 }
 
 const integrations: Integration[] = [
@@ -96,6 +98,7 @@ export function getUserData(nameAttr = 'username'): User {
 export function createClient(config: SentryConfig): BrowserClient {
   const client = new BrowserClient({
     dsn: config.dsn,
+    tunnel: config.tunnel,
 
     transport: makeFetchTransport,
     stackParser: defaultStackParser,
