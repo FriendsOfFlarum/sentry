@@ -21,14 +21,14 @@
     "test": "yarn node --experimental-vm-modules $(yarn bin jest)"
   },
   "devDependencies": {
-    "@flarum/jest-config": "^2.0.2",
+    "@flarum/jest-config": "^2.1.1",
     "@flarum/prettier-config": "^1.0.0",
     "flarum-tsconfig": "^2.0.0",
-    "flarum-webpack-config": "^3.0.6",
+    "flarum-webpack-config": "^3.1.0",
     "prettier": "^3.0.3",
     "typescript": "^5.9.3",
     "typescript-coverage-report": "^2.1.2",
     "webpack": "^5.104.1",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^7.2.3"
   }
 }
