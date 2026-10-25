@@ -53,6 +53,14 @@ return [
     (new Flarum\Event())
         ->subscribe(Tracing\TraceQueueJobs::class),
 
+    // The browser SDK's tunnel: frontend events reach the DSN through the forum. The SDK cannot send a
+    // CSRF token, and the route only forwards to the configured DSN.
+    (new Flarum\Routes('forum'))
+        ->post('/sentry/tunnel', 'fof-sentry.tunnel', Http\TunnelController::class),
+
+    (new Flarum\Csrf())
+        ->exemptRoute('fof-sentry.tunnel'),
+
     // These settings decide whether the Sentry bundle is compiled into forum.js at all.
     (new Flarum\Settings())
         ->resetJsCacheFor('fof-sentry.dsn')
@@ -69,6 +77,7 @@ return [
         ->default('fof-sentry.javascript.replays_error_sample_rate', 0)
         ->default('fof-sentry.profile_rate', 0)
         ->default('fof-sentry.javascript', true)
+        ->default('fof-sentry.javascript.tunnel', false)
         // Database query performance monitoring settings
         ->default('fof-sentry.db.slow_query_threshold', 1000)
         ->default('fof-sentry.db.n_plus_one_detection', true)
